@@ -1,10 +1,17 @@
 import socket
 import threading
-from database import database
+from database import user_db
+from database import board_db
+from database import post_db
+from database import comment_db
 import sqlite3
 import sys
 
-db = database()
+user = user_db()
+board = board_db()
+post = post_db()
+comment = comment_db()
+
 
 class thread_server(threading.Thread):
 
@@ -16,9 +23,8 @@ class thread_server(threading.Thread):
 
     def run(self):
 
-        conn = sqlite3.connect('hw1.db')
+        conn = sqlite3.connect('bbs.db')
         c = conn.cursor()
-        # db.delete()
         self.socket.send("********************************\n\r".encode())
         self.socket.send("** Welcome to the BBS server. **\n\r".encode())
         self.socket.send("********************************\n\r".encode())
@@ -38,7 +44,7 @@ class thread_server(threading.Thread):
             	if( len(data) != 4):
             		self.socket.send("Usage: register <username> <email> <password>\n\r".encode())
             	else:
-            		db.insert(data[1], data[2], data[3], self.socket)
+            		user.insert(data[1], data[2], data[3], self.socket)
             
             elif(data[0] == "login"):
 
@@ -46,7 +52,7 @@ class thread_server(threading.Thread):
                     self.socket.send("login <username> <password>\n\r".encode())
                 elif(len(self.user) == 0):
 
-                    count = db.select(data[1], data[2], self.socket)
+                    count = user.select(data[1], data[2], self.socket)
                     if(count == 0):
                         self.socket.send("Login failed.\n\r".encode())
 
@@ -76,10 +82,6 @@ class thread_server(threading.Thread):
 
             else:
                 pass
-            # data = data_in.decode(encoding='utf-8').split()
-            print("recieve", data)
-            # print('recive:',data_in.decode())
-            # self.socket.send(data_in.upper())
         self.socket.close()
         conn.commit()
         conn.close()
@@ -91,24 +93,12 @@ if __name__ == "__main__":
     port = 9090
     if( len(sys.argv) == 2):
         port = int(sys.argv[1])
-    
-
-
-    # cursor = c.execute("SELECT Username, Email, Password   FROM user ")
-    # # print(cursor)
-    # for row in cursor:
-    #    print("Username", row[0])
-    #    print("Email", row[1])
-    #    print("Password", row[2])
-
 
     server = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
     host = socket.gethostname()
     server.bind((host,port)) 
-    # print(host, port)
     server.listen(10) 
     while True:
         (conn,addr) = server.accept() 
-        print(conn,addr)
         print("New connection")
         thread_server(conn, addr).start()
