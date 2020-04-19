@@ -36,10 +36,10 @@ class user_db():
         c = conn.cursor()
         cursor = c.execute("SELECT COUNT(*) FROM user WHERE Username = (?) AND Password = (?)", (name, password,))
         for row in cursor:
+            conn.commit()
+            conn.close()
             return row[0]
-        conn.commit()
-        conn.close()
-
+        
     def delete(self):
         conn = sqlite3.connect('bbs.db')
         c = conn.cursor()
@@ -63,46 +63,53 @@ class board_db():
         conn.commit()
         conn.close()
 
-    # def insert(self, name, mod, socket):
-    #     conn = sqlite3.connect('bbs.db')
-    #     c = conn.cursor()
-    #     try:
-    #         c.execute("INSERT INTO board ( Board_name , Moderator) \
-    #                VALUES (?, ?)" , (name, mod))
-    #         socket.send("Create board successfully.\n\r".encode())
-
-    #     except sqlite3.IntegrityError:
-    #         socket.send("Board already exist.\n\r".encode())
-    #     conn.commit()
-    #     conn.close()
-
-    def insert(self, name, mod):
+    def insert(self, name, mod, socket):
         conn = sqlite3.connect('bbs.db')
         c = conn.cursor()
         try:
             c.execute("INSERT INTO board ( Board_name , Moderator) \
                    VALUES (?, ?)" , (name, mod))
-            
+            socket.send("Create board successfully.\n\r".encode())
 
         except sqlite3.IntegrityError:
-            # need to fix error message
-            print('board_error')
+            socket.send("Board already exist.\n\r".encode())
         conn.commit()
         conn.close()
 
-    def select(self, key):
+    def list_board(self, key, socket):
         conn = sqlite3.connect('bbs.db')
         c = conn.cursor()
-        cursor = c.execute("SELECT * FROM board  where Board_name like '%{}%' " .format(key))
-        print('Index\tName\tModerator')
+        if(len(key) != 0):
+            cursor = c.execute("SELECT * FROM board  where Board_name like '%{}%' " .format(key))
+        else:
+            cursor = c.execute("SELECT * FROM board ")
+
+        socket.send('Index\tName\tModerator\n\r')
+
         i = 1
         for row in cursor:
-            print('{index}\t{name}\t{mod}' .format( index = i, name = row[1] , mod = row[2]))
+            socket.send('{index}\t{name}\t{mod}\n\r'.format( index = i, name = row[1] , mod = row[2]).encode())
             i += 1
             # return row[0]
         conn.commit()
         conn.close()
 
+    def check_board(self, name):
+        conn = sqlite3.connect('bbs.db')
+        c = conn.cursor()
+        # print('name:' , name , 'len:', len(name))
+        try:
+            cursor = c.execute("SELECT COUNT(*) FROM board WHERE Board_name like '{}' " .format(name))
+            for row in cursor:
+                conn.commit()
+                conn.close()
+                # print(row)
+                return row[0]
+        except:
+            conn.commit()
+            conn.close()
+            return 0
+        
 
 class post_db():
 
@@ -136,13 +143,20 @@ class post_db():
         conn.commit()
         conn.close()
 
-    def list_post(self, bname ,key):
+    def list_post(self, bname ,key, socket):
         conn = sqlite3.connect('bbs.db')
         c = conn.cursor()
-        cursor = c.execute("SELECT * FROM post  where Board_name = (?) and Title like '%{}%' " .format(key),(bname,))
-        print('ID\tTitle\tAuthor\tDate')
+        if len(key) != 0:
+            cursor = c.execute("SELECT * FROM post  where Board_name = (?) and Title like '%{}%' " .format(key),(bname,))
+            print('key!=0')
+        else:
+            cursor = c.execute("SELECT * FROM post  where Board_name = (?)  " ,(bname,))
+        socket.send('ID\tTitle\tAuthor\tDate\n\r')
         for row in cursor:
-            print('{id}\t{author}\t{title}\t{date}' .format( id = row[0], author = row[1] , title = row[3], date = row[2]))
+            # print(row)
+
+            ###### id board title name date content
+            socket.send('{id}\t{title}\t{author}\t{date}\n\r' .format( id = row[0], author = row[3] , title = row[2], date = row[4]).encode())
 
             # return row[0]
         conn.commit()
@@ -156,6 +170,8 @@ class post_db():
             print('Author\t:{}\nTitle\t:{}\nDate\t:{}' .format(row[1], row[3], row[2]))
             print('--')
             print(row[4])
+            print('--')
+
             # return row[0]
         conn.commit()
         conn.close()
@@ -195,8 +211,8 @@ class comment_db():
         conn = sqlite3.connect('bbs.db')
         c = conn.cursor()
         cursor = c.execute("SELECT * FROM comment  where Post_id = {} " .format(pid))
-        print('--')
         for row in cursor:
+
             print('{name}: {content}' .format( name = row[1], content = row[2]))
 
             # return row[0]
@@ -208,13 +224,16 @@ if __name__ == "__main__":
     pt = post_db()
     ct = comment_db()
 
-    pt.insert('ttt', 'author', 'title', 'date', '1')
-    pt.list_post('b','t')
-    pt.read_post(11)
-
-    ct.insert('john', 'is so handsome', 11)
-    ct.list_comment(11)
-
+    conn = sqlite3.connect('bbs.db')
+    c = conn.cursor()
+    key = 'b'
+    bname = 'b1'
+    cursor = c.execute("SELECT * FROM post  where Board_name = {} and Title like '%{}%' " .format(key),(bname,))
+    for row in cursor:
+        # print('{name}: {content}' .format( name = row[1], content = row[2]))
+        print(row)
+    conn.commit()
+    conn.close()
 
 
     # bd.insert('b1', 'jj')

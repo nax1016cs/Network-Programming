@@ -6,6 +6,8 @@ from database import post_db
 from database import comment_db
 import sqlite3
 import sys
+import re
+import datetime
 
 user = user_db()
 board = board_db()
@@ -31,14 +33,16 @@ class thread_server(threading.Thread):
 
         while True:
             self.socket.send("% ".encode())
-            data_in = self.socket.recv(1024)
+            data_in = self.socket.recv(2048)
             
             if not data_in:
                 continue
             elif data_in.decode() == 'exit\r\n':
                 break
 
+            # print(data_in.decode())
             data = data_in.decode().split()
+
 
             if(data[0] == "register"):
             	if( len(data) != 4):
@@ -80,8 +84,57 @@ class thread_server(threading.Thread):
                     user_str = self.user + ".\n\r"
                     self.socket.send(user_str.encode())
 
+            elif( data[0] == "create-board" ):
+                if( len(self.user) == 0):
+                    self.socket.send("Please login first.\n\r".encode())
+                else:
+                    board.insert(data[1], self.user, self.socket)
+
+            elif( data[0] == "list-board" ):
+                if(len(data) == 2):
+                    board.list_board(data[1].strip('#'), self.socket)
+                else:
+                    board.list_board('', self.socket)
+
+            elif( data[0] == "create-post" ):
+                if( len(self.user) == 0):
+                    self.socket.send("Please login first.\n\r".encode())
+
+                elif( not board.check_board(data[1])):
+                    self.socket.send("Board does not exist.\n\r".encode())
+                
+                else:
+                    title = re.search('--title (.*) --content', data_in.decode()).group(1)
+                    t_content = re.search('--content (.*)', data_in.decode()).group(1)
+                    content = t_content.replace('<br>', '\n')
+
+                    # print('title: ', title, 'content: ', content)
+                    now = datetime.datetime.now()
+                    date = str(now.year) + '-' + str(now.month) + '-' + str(now.day)
+                    post.insert(data[1], self.user, date, title, content)
+
+                    self.socket.send("Create post successfully.\n\r".encode())
+
+            # list-post
+            elif( data[0] == "list-post" ):
+                if( not board.check_board(data[1])):
+                    self.socket.send("Board does not exist.\n\r".encode())
+                else:
+                    if(len(data) == 3):
+                        post.list_post(data[1], data[2].strip('#'), self.socket)
+                        print(data[2].strip('#'))
+
+                    elif(len(data) == 2):
+                        post.list_post(data[1], "" , self.socket)
             else:
                 pass
+
+
+
+
+
+
+
         self.socket.close()
         conn.commit()
         conn.close()
