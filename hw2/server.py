@@ -44,63 +44,64 @@ class thread_server(threading.Thread):
             data = data_in.decode().split()
 
 
-            if(data[0] == "register"):
-            	if( len(data) != 4):
+            if data[0] == "register":
+            	if len(data) != 4:
             		self.socket.send("Usage: register <username> <email> <password>\n\r".encode())
             	else:
             		user.insert(data[1], data[2], data[3], self.socket)
             
-            elif(data[0] == "login"):
+            elif data[0] == "login":
 
-                if( len(data) != 3):
+                if len(data) != 3:
                     self.socket.send("login <username> <password>\n\r".encode())
-                elif(len(self.user) == 0):
+                elif len(self.user) == 0:
 
                     count = user.select(data[1], data[2], self.socket)
-                    if(count == 0):
+                    if count == 0:
                         self.socket.send("Login failed.\n\r".encode())
 
-                    elif(count == 1):
+                    elif count == 1:
                         welcome_str = "Welcome, " + data[1] + ".\n\r"
                         self.socket.send(welcome_str.encode())
                         self.user = data[1]
                 else:
                     self.socket.send("Please logout first.\n\r".encode())
 
-            elif( data[0] == "logout" and len(data) == 1):
+            elif data[0] == "logout" and len(data) == 1 :
 
-                if( len(self.user) == 0):
+                if len(self.user) == 0 :
                     self.socket.send("Please login first.\n\r".encode())
                 else:
                     bye_str = "Bye, " + self.user + ".\n\r"
                     self.socket.send(bye_str.encode())
                     self.user = ""
 
-            elif( data[0] == "whoami" and len(data) == 1):
+            elif data[0] == "whoami" and len(data) == 1 :
 
-                if( len(self.user) == 0):
+                if len(self.user) == 0 :
                     self.socket.send("Please login first.\n\r".encode())
                 else:
                     user_str = self.user + ".\n\r"
                     self.socket.send(user_str.encode())
 
-            elif( data[0] == "create-board" ):
-                if( len(self.user) == 0):
+            elif data[0] == "create-board" :
+                if len(self.user) == 0 :
                     self.socket.send("Please login first.\n\r".encode())
                 else:
                     board.insert(data[1], self.user, self.socket)
 
-            elif( data[0] == "list-board" ):
-                if(len(data) == 2):
-                    board.list_board(data[1].strip('#'), self.socket)
+            elif data[0] == "list-board" :
+                if len(data) == 2 :
+                    if data[1][0] == '#' and data[1][1] == '#':
+                        board.list_board(data[1][2:], self.socket)
                 else:
                     board.list_board('', self.socket)
 
-            elif( data[0] == "create-post" ):
-                if( len(self.user) == 0):
+            elif data[0] == "create-post" :
+                if len(self.user) == 0 :
                     self.socket.send("Please login first.\n\r".encode())
 
-                elif( not board.check_board(data[1])):
+                elif not board.check_board(data[1]) :
                     self.socket.send("Board does not exist.\n\r".encode())
                 
                 else:
@@ -116,24 +117,72 @@ class thread_server(threading.Thread):
                     self.socket.send("Create post successfully.\n\r".encode())
 
             # list-post
-            elif( data[0] == "list-post" ):
-                if( not board.check_board(data[1])):
+            elif  data[0] == "list-post" :
+                if not board.check_board(data[1]) :
                     self.socket.send("Board does not exist.\n\r".encode())
                 else:
-                    if(len(data) == 3):
-                        post.list_post(data[1], data[2].strip('#'), self.socket)
-                        print(data[2].strip('#'))
+                    if len(data) == 3 :
+                        if data[2][0] =='#' and data[2][1] =='#':
+                            post.list_post(data[1], data[2][2:], self.socket)
+                        # print(data[2].strip('#'))
 
-                    elif(len(data) == 2):
+                    elif len(data) == 2 :
                         post.list_post(data[1], "" , self.socket)
+            elif data[0] == "read":
+                if not post.check_post(data[1]):
+                    self.socket.send("Post does not exist.\n\r".encode())
+                else:
+                    post.read_post(data[1], self.socket)
+                    if comment.check_comment(data[1]):
+                        comment.list_comment(data[1], self.socket)
+
+            elif data[0] == "comment":
+                if len(self.user) == 0 :
+                    self.socket.send("Please login first.\n\r".encode())
+
+                elif not post.check_post(data[1]):
+                    self.socket.send("Post does not exist.\n\r".encode())
+
+                else:
+                    t_comment = re.search('\d (.*)', data_in.decode()).group(1)
+                    cmt = t_comment.replace('<br>', '\n')
+                    # print('cmt: ', cmt, 't_comment: ', t_comment)
+                    comment.insert(self.user, cmt ,data[1])
+                    self.socket.send("Comment successfully.\n\r".encode())
+
+            elif data[0] == "delete-post":
+                if len(self.user) == 0 :
+                    self.socket.send("Please login first.\n\r".encode())
+
+                elif not post.check_post(data[1]):
+                    self.socket.send("Post does not exist.\n\r".encode())
+
+                elif self.user != post.get_user(data[1]):
+                    self.socket.send("Not the post owner.\n\r".encode())
+
+                else:
+                    post.delete_post(data[1])
+                    self.socket.send("Delete successfully.\n\r".encode())
+
+            elif data[0] == "update-post":
+                if len(self.user) == 0 :
+                    self.socket.send("Please login first.\n\r".encode())
+
+                elif not post.check_post(data[1]):
+                    self.socket.send("Post does not exist.\n\r".encode())
+
+                elif self.user != post.get_user(data[1]):
+                    self.socket.send("Not the post owner.\n\r".encode())
+
+                else:
+                    new_title = re.search('--title (.*)|--content (.*)', data_in.decode()).group(1)
+                    new_content = re.search('--title (.*)|--content (.*)', data_in.decode()).group(2)
+                    new_data = new_title if new_title != None else new_content
+                    post.update_post(data[1], data[2].strip('-').capitalize(), new_data)
+                    self.socket.send("Update successfully.\n\r".encode())
+                    
             else:
                 pass
-
-
-
-
-
-
 
         self.socket.close()
         conn.commit()
@@ -144,7 +193,7 @@ class thread_server(threading.Thread):
 if __name__ == "__main__":
 
     port = 9090
-    if( len(sys.argv) == 2):
+    if len(sys.argv) == 2 :
         port = int(sys.argv[1])
 
     server = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
