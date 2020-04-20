@@ -2,7 +2,6 @@ import sqlite3
 import sys
 
 
-
 class user_db():
     def __init__(self):
         conn = sqlite3.connect('bbs.db')
@@ -80,7 +79,10 @@ class board_db():
         conn = sqlite3.connect('bbs.db')
         c = conn.cursor()
         if(len(key) != 0):
-            cursor = c.execute("SELECT * FROM board  where Board_name like '%{}%' " .format(key))
+            
+            cursor = c.execute("PRAGMA case_sensitive_like = true")
+            temp_key = '%' + key +'%'
+            cursor = c.execute("SELECT * FROM board  where Board_name like ? " ,(temp_key, ))
         else:
             cursor = c.execute("SELECT * FROM board ")
 
@@ -99,7 +101,8 @@ class board_db():
         c = conn.cursor()
         # print('name:' , name , 'len:', len(name))
         try:
-            cursor = c.execute("SELECT COUNT(*) FROM board WHERE Board_name like '{}' " .format(name))
+            cursor = c.execute("PRAGMA case_sensitive_like = true")
+            cursor = c.execute("SELECT COUNT(*) FROM board WHERE Board_name = ? " ,(name,))
             for row in cursor:
                 conn.commit()
                 conn.close()
@@ -147,7 +150,9 @@ class post_db():
         conn = sqlite3.connect('bbs.db')
         c = conn.cursor()
         if len(key) != 0:
-            cursor = c.execute("SELECT * FROM post  where Board_name = (?) and Title like '%{}%' " .format(key),(bname,))
+            cursor = c.execute("PRAGMA case_sensitive_like = true")
+            temp_key = '%' + key + '%'
+            cursor = c.execute("SELECT * FROM post  where Board_name = (?) and Title like ? " ,(bname,temp_key,))
         else:
             cursor = c.execute("SELECT * FROM post  where Board_name = (?)  " ,(bname,))
         socket.send('ID\tTitle\tAuthor\tDate\n\r'.encode())
@@ -167,7 +172,7 @@ class post_db():
         c = conn.cursor()
         # print('name:' , name , 'len:', len(name))
         try:
-            cursor = c.execute("SELECT COUNT(*) FROM post WHERE PID = {} " .format(id))
+            cursor = c.execute("SELECT COUNT(*) FROM post WHERE PID = ? " ,(id,))
             for row in cursor:
                 conn.commit()
                 conn.close()
@@ -181,7 +186,7 @@ class post_db():
     def read_post(self, id, socket):
         conn = sqlite3.connect('bbs.db')
         c = conn.cursor()
-        cursor = c.execute("SELECT * FROM post  where PID = {} " .format(id))
+        cursor = c.execute("SELECT * FROM post  where PID = ? " ,(id,))
         for row in cursor:
             # print(row)
             # socket.send('ID\tTitle\tAuthor\tDate\n\r'.encode())
@@ -197,7 +202,7 @@ class post_db():
     def get_user(self, id):
         conn = sqlite3.connect('bbs.db')
         c = conn.cursor()
-        cursor = c.execute("SELECT Author FROM post  WHERE PID = {}" .format(id))
+        cursor = c.execute("SELECT Author FROM post  WHERE PID = ?" ,(id,))
         for row in cursor:
             # print(row)
             conn.commit()
@@ -209,14 +214,14 @@ class post_db():
     def delete_post(self, id):
         conn = sqlite3.connect('bbs.db')
         c = conn.cursor()
-        c.execute("DELETE from post WHERE PID = {}" .format(id))
+        c.execute("DELETE from post WHERE PID = ?" ,(id,) )
         conn.commit()
         conn.close()
 
     def update_post(self, id, target, data):
         conn = sqlite3.connect('bbs.db')
         c = conn.cursor()
-        c.execute("UPDATE post SET {} = (?) WHERE PID = (?)" .format(target), ( data, id,) )
+        c.execute("UPDATE post SET (?) = (?) WHERE PID = (?)" , (target, data, id,) )
         conn.commit()
         conn.close()
  
@@ -254,7 +259,7 @@ class comment_db():
     def list_comment(self, pid, socket):
         conn = sqlite3.connect('bbs.db')
         c = conn.cursor()
-        cursor = c.execute("SELECT * FROM comment  where Post_id = {} " .format(pid))
+        cursor = c.execute("SELECT * FROM comment  where Post_id = ? " ,(pid,) )
         for row in cursor:
             # print(row)
             socket.send('{name}: {content}\n\r' .format( name = row[1], content = row[2]).encode())
@@ -267,7 +272,7 @@ class comment_db():
         c = conn.cursor()
         # print('name:' , name , 'len:', len(name))
         try:
-            cursor = c.execute("SELECT COUNT(*) FROM comment WHERE Post_id = {} " .format(id))
+            cursor = c.execute("SELECT COUNT(*) FROM comment WHERE Post_id = ? " ,(id,) )
             for row in cursor:
                 conn.commit()
                 conn.close()
