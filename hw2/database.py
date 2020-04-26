@@ -86,11 +86,11 @@ class board_db():
         else:
             cursor = c.execute("SELECT * FROM board ")
 
-        socket.send('Index\tName\tModerator\n\r'.encode())
+        socket.send('Index\tName\t\tModerator\n\r'.encode())
 
         i = 1
         for row in cursor:
-            socket.send('{index}\t{name}\t{mod}\n\r'.format( index = i, name = row[1] , mod = row[2]).encode())
+            socket.send('{:<8}{:<16}{}\n\r'.format(  i, row[1] ,  row[2]).encode())
             i += 1
             # return row[0]
         conn.commit()
@@ -155,13 +155,13 @@ class post_db():
             cursor = c.execute("SELECT * FROM post  where Board_name = (?) and Title like ? " ,(bname,temp_key,))
         else:
             cursor = c.execute("SELECT * FROM post  where Board_name = (?)  " ,(bname,))
-        socket.send('ID\tTitle\tAuthor\tDate\n\r'.encode())
+        socket.send('ID\tTitle\t\tAuthor\t\tDate\n\r'.encode())
         for row in cursor:
             # print(row)
 
             ###### id board title name date content
             new_date = row[2][row[2].find('-') + 1:].replace('-','/')
-            socket.send('{id}\t{title}\t{author}\t{date}\n\r' .format( id = row[0], author = row[1] , title = row[3], date = new_date).encode())
+            socket.send('{:<8}{:<16}{:<16}{}\n\r' .format(  row[0],  row[3] ,row[1], new_date).encode())
 
             # return row[0]
         conn.commit()
@@ -221,7 +221,7 @@ class post_db():
     def update_post(self, id, target, data):
         conn = sqlite3.connect('bbs.db')
         c = conn.cursor()
-        c.execute("UPDATE post SET (?) = (?) WHERE PID = (?)" , (target, data, id,) )
+        c.execute("UPDATE post SET {} = (?) WHERE PID = (?)" .format(target), ( data, id,) )
         conn.commit()
         conn.close()
  

@@ -178,7 +178,7 @@ class thread_server(threading.Thread):
                     new_title = re.search('--title (.*)|--content (.*)', data_in.decode()).group(1)
                     new_content = re.search('--title (.*)|--content (.*)', data_in.decode()).group(2)
                     new_data = new_title if new_title != None else new_content
-                    post.update_post(data[1], data[2].strip('-').capitalize(), new_data)
+                    post.update_post(data[1], data[2].strip('-'), new_data.rstrip())
                     self.socket.send("Update successfully.\n\r".encode())
                     
             else:
