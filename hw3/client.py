@@ -75,25 +75,28 @@ while True:
     
     elif data.strip() == 'Comment successfully.':
         postdata = client.recv(4096).decode()
-        print('1: ', postdata)
+        print('postdata: ', postdata)
         author_bucket = postdata.split()[1]
         object_name = postdata.split()[0]
         comment = client.recv(4096).decode()
-        print('2: ', comment)
+        print('comment: ', comment)
         target_bucket = s3.Bucket(author_bucket)
         target_object = target_bucket.Object(object_name)
         object_content = target_object.get()['Body'].read().decode()
-        # print('bucket: ', author_bucket, 'oid', object_name, 'comment', comment)
-        print('3: ', object_content)
         new_content = object_content + comment
+        print('new comment: ', new_content)
         dest_dir = './tmp/' + object_name
-        with open(os.path.join('C:\\Users\\Chiang Chieh Ming\\Desktop\\Network-Programming\\hw3\\tmp',object_name), "w") as file:
-                file.write(new_content)
-                file.close()
         target_bucket.upload_file(dest_dir, object_name)
 
+    elif data.strip() == 'Delete successfully.':
+        postdata = client.recv(4096).decode()
+        print(postdata)
+        author_bucket = postdata.split()[1]
+        object_name = postdata.split()[0]
+        target_bucket = s3.Bucket(author_bucket)
+        target_object = target_bucket.Object(object_name)
+        target_object.delete()
 
-        
 
     print(data, end = '')
 

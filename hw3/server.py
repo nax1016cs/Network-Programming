@@ -205,9 +205,13 @@ class thread_server(threading.Thread):
                     self.socket.send(message.encode())
 
                 else:
+                    oid, bucket_name = post.get_bucket_and_oid(data[1])
                     post.delete_post(data[1])
+                    datas = oid + " " + bucket_name
                     message = "Delete successfully.\n\r" 
                     self.socket.send(message.encode())
+                    self.socket.send(datas.encode())
+
 
             elif data[0] == "update-post":
                 if len(self.user) == 0 :
