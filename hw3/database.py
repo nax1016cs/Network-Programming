@@ -1,6 +1,8 @@
 # coding=utf-8
 import sqlite3
 import sys
+import time
+import os
 
 
 class user_db():
@@ -26,13 +28,15 @@ class user_db():
             B_name = '0516097bucket' + name 
             c.execute("INSERT INTO user ( Username , Email , Password, Bucketname) \
                    VALUES (?, ?, ?, ? )" , (name, email, password, B_name ))
-            socket.send("Register successfully.\n\r".encode())
-            ### send the bucket name to client
+            message = "Register successfully.\n\r"
+            socket.send(message.encode())
+            # need to fix 
             socket.send(B_name.encode())
 
 
         except sqlite3.IntegrityError:
-            socket.send("Username is already used.\n\r".encode())
+            message = "Username is already used.\n\r" 
+            socket.send(message.encode())
         conn.commit()
         conn.close()
 
@@ -46,7 +50,19 @@ class user_db():
         conn.commit()
         conn.close()
         return bucket_name
-        
+    
+    # def get_bucket(self, name):
+    #     conn = sqlite3.connect('bbs.db')
+    #     c = conn.cursor()
+    #     bucket_name = ""
+    #     cursor = c.execute("SELECT Bucketname FROM user WHERE Username = (?)", (name,))
+    #     for row in cursor:
+    #         bucket_name = row[0]
+    #     conn.commit()
+    #     conn.close()
+    #     return bucket_name
+
+
     def delete(self):
         conn = sqlite3.connect('bbs.db')
         c = conn.cursor()
@@ -76,16 +92,20 @@ class board_db():
         try:
             c.execute("INSERT INTO board ( Board_name , Moderator) \
                    VALUES (?, ?)" , (name, mod))
-            socket.send("Create board successfully.\n\r".encode())
+            message = "Create board successfully.\n\r" 
+            socket.send(message.encode())
 
         except sqlite3.IntegrityError:
-            socket.send("Board already exist.\n\r".encode())
+            message  = "Board already exist.\n\r" 
+            socket.send(message.encode())
         conn.commit()
         conn.close()
 
     def list_board(self, key, socket):
         conn = sqlite3.connect('bbs.db')
         c = conn.cursor()
+        cnt = 0
+
         if(len(key) != 0):
             
             cursor = c.execute("PRAGMA case_sensitive_like = true")
@@ -94,13 +114,13 @@ class board_db():
         else:
             cursor = c.execute("SELECT * FROM board ")
 
-        socket.send('Index\tName\t\tModerator\n\r'.encode())
-
+        message = 'Index\tName\t\tModerator\n\r'
         i = 1
         for row in cursor:
-            socket.send('{:<8}{:<16}{}\n\r'.format(  i, row[1] ,  row[2]).encode())
+            message += '{:<8}{:<16}{}\n\r'.format(  i, row[1] ,  row[2])
             i += 1
-            # return row[0]
+
+        socket.send(message.encode())
         conn.commit()
         conn.close()
 
@@ -133,26 +153,33 @@ class post_db():
                         Author TEXT NOT NULL,                        
                         Date TEXT NOT NULL,
                         Title TEXT NOT NULL, 
-                        Content TEXT NOT NULL,
-                        Board_name TEXT NOT NULL );''')
+                        Board_name TEXT NOT NULL,
+                        Object_id  TEXT NOT NULL,
+                        Userbucket TEXT NOT NULL
+                        );''')
         except sqlite3.OperationalError:
             pass
         conn.commit()
         conn.close()
 
-    def insert(self, Board_name,  Author, Date, Title,  Content):
+    def insert(self, Board_name,  Author, Date, Title, Content,userbucket ):
         conn = sqlite3.connect('bbs.db')
         c = conn.cursor()
         try:
-            c.execute("INSERT INTO post ( Board_name , Author, Date, Title, Content) \
-                   VALUES (?, ?, ?, ?, ?)" , (Board_name, Author, Date ,Title, Content))
-            # print('ok')
+            object_name = Title +  str(int(time.time())) + '.txt'
+            new_content = '--\n\r' + Content + '\n\r--\n\r'
+            with open(os.path.join('C:\\Users\\Chiang Chieh Ming\\Desktop\\Network-Programming\\hw3\\tmp',object_name), "w") as file:
+                file.write(new_content)
+                file.close()
+            c.execute("INSERT INTO post ( Board_name , Author, Date, Title, Object_id, Userbucket ) \
+                   VALUES (?, ?, ?, ?, ?, ?)" , (Board_name, Author, Date ,Title, object_name, userbucket,))
 
         except sqlite3.IntegrityError:
             # need to fix error message
             print('post_error')
         conn.commit()
         conn.close()
+        return object_name
 
     def list_post(self, bname ,key, socket):
         conn = sqlite3.connect('bbs.db')
@@ -163,15 +190,15 @@ class post_db():
             cursor = c.execute("SELECT * FROM post  where Board_name = (?) and Title like ? " ,(bname,temp_key,))
         else:
             cursor = c.execute("SELECT * FROM post  where Board_name = (?)  " ,(bname,))
-        socket.send('ID\tTitle\t\tAuthor\t\tDate\n\r'.encode())
+        message = 'ID\tTitle\t\tAuthor\t\tDate\n\r'
         for row in cursor:
             # print(row)
 
             ###### id board title name date content
             new_date = row[2][row[2].find('-') + 1:].replace('-','/')
-            socket.send('{:<8}{:<16}{:<16}{}\n\r' .format(  row[0],  row[3] ,row[1], new_date).encode())
+            message += '{:<8}{:<16}{:<16}{}\n\r' .format(  row[0],  row[3] ,row[1], new_date)
 
-            # return row[0]
+        socket.send(message.encode())
         conn.commit()
         conn.close()
 
@@ -195,17 +222,22 @@ class post_db():
         conn = sqlite3.connect('bbs.db')
         c = conn.cursor()
         cursor = c.execute("SELECT * FROM post  where PID = ? " ,(id,))
-        for row in cursor:
-            # print(row)
-            # socket.send('ID\tTitle\tAuthor\tDate\n\r'.encode())
-            socket.send('Author\t:{}\nTitle\t:{}\nDate\t:{}\n\r' .format(row[1], row[3], row[2]).encode())
-            socket.send('--\n\r'.encode())
-            socket.send(row[4].encode())
-            socket.send('\n\r--\n\r'.encode())
 
-            # return row[0]
+        message = ""
+        object_name = ""
+        author_bucket = ""
+        for row in cursor:
+            message += 'Author\t:{}\nTitle\t:{}\nDate\t:{}\n\r' .format(row[1], row[3], row[2])
+            # print(row)
+            object_name = row[5]
+            # postid = int(row[0])
+            author_bucket = row[6]
+            print(row)
+
         conn.commit()
         conn.close()
+        # get the content
+        return message, object_name, author_bucket
 
     def get_user(self, id):
         conn = sqlite3.connect('bbs.db')
@@ -217,6 +249,16 @@ class post_db():
             conn.close()
             # print(row)
             return row[0]
+
+    def get_bucket_and_oid(self, id):
+        conn = sqlite3.connect('bbs.db')
+        c = conn.cursor()
+        cursor = c.execute("SELECT Object_id, Userbucket FROM post  WHERE PID = ?" ,(id,))
+        for row in cursor:
+            print(row)
+            conn.commit()
+            conn.close()
+            return row[0], row[1]
 
 
     def delete_post(self, id):
@@ -233,63 +275,64 @@ class post_db():
         conn.commit()
         conn.close()
  
-class comment_db():
+# class comment_db():
 
-    def __init__(self):
-        conn = sqlite3.connect('bbs.db')
-        c = conn.cursor()
-        try:
-            c.execute('''CREATE TABLE comment
-                      ( CID INTEGER PRIMARY KEY AUTOINCREMENT,
-                        Name TEXT NOT NULL,
-                        Content TEXT NOT NULL,
-                        Post_id INTEGER NOT NULL);''')
-        except sqlite3.OperationalError:
-            pass
-        conn.commit()
-        conn.close()
+#     def __init__(self):
+#         conn = sqlite3.connect('bbs.db')
+#         c = conn.cursor()
+#         try:
+#             c.execute('''CREATE TABLE comment
+#                       ( CID INTEGER PRIMARY KEY AUTOINCREMENT,
+#                         Name TEXT NOT NULL,
+#                         Post_id INTEGER NOT NULL,
+#                         Object_id  TEXT NOT NULL,
+#                         Userbucket TEXT NOT NULL
+#                         );''')
+#         except sqlite3.OperationalError:
+#             pass
+#         conn.commit()
+#         conn.close()
 
-    def insert(self, name, content, pid):
-        conn = sqlite3.connect('bbs.db')
-        c = conn.cursor()
-        try:
-            c.execute("INSERT INTO comment ( Name , Content, Post_id) \
-                   VALUES (?, ?, ?)" , (name, content, pid))
-            # print('ok')
+#     def insert(self, name, pid, objectid, userbucket):
+#         conn = sqlite3.connect('bbs.db')
+#         c = conn.cursor()
+#         try:
+#             c.execute("INSERT INTO comment ( Name, Post_id, Object_id, Userbucket ) \
+#                    VALUES (?, ?, ?, ?)" , (name, pid, objectid, userbucket ))
 
-        except sqlite3.IntegrityError:
-            # need to fix error message
-            print('comment_error')
-            pass
-        conn.commit()
-        conn.close()
+#         except sqlite3.IntegrityError:
+#             # need to fix error message
+#             print('comment_error')
+#             pass
+#         conn.commit()
+#         conn.close()
 
-    def list_comment(self, pid, socket):
-        conn = sqlite3.connect('bbs.db')
-        c = conn.cursor()
-        cursor = c.execute("SELECT * FROM comment  where Post_id = ? " ,(pid,) )
-        for row in cursor:
-            # print(row)
-            socket.send('{name}: {content}\n\r' .format( name = row[1], content = row[2]).encode())
-            # return row[0]
-        conn.commit()
-        conn.close()
+    # def list_comment(self, pid, socket):
+    #     conn = sqlite3.connect('bbs.db')
+    #     c = conn.cursor()
+    #     cursor = c.execute("SELECT * FROM comment  where Post_id = ? " ,(pid,) )
+    #     for row in cursor:
+    #         # print(row)
+    #         socket.send('{name}: {content}\n\r' .format( name = row[1], content = row[2]).encode())
+    #         # return row[0]
+    #     conn.commit()
+    #     conn.close()
 
-    def check_comment(self, id):
-        conn = sqlite3.connect('bbs.db')
-        c = conn.cursor()
-        # print('name:' , name , 'len:', len(name))
-        try:
-            cursor = c.execute("SELECT COUNT(*) FROM comment WHERE Post_id = ? " ,(id,) )
-            for row in cursor:
-                conn.commit()
-                conn.close()
-                # print(row)
-                return row[0]
-        except:
-            conn.commit()
-            conn.close()
-            return 0
+    # def check_comment(self, id):
+    #     conn = sqlite3.connect('bbs.db')
+    #     c = conn.cursor()
+    #     # print('name:' , name , 'len:', len(name))
+    #     try:
+    #         cursor = c.execute("SELECT COUNT(*) FROM comment WHERE Post_id = ? " ,(id,) )
+    #         for row in cursor:
+    #             conn.commit()
+    #             conn.close()
+    #             # print(row)
+    #             return row[0]
+    #     except:
+    #         conn.commit()
+    #         conn.close()
+    #         return 0
 
 if __name__ == "__main__":
     bd = board_db()
@@ -298,14 +341,5 @@ if __name__ == "__main__":
     user = user_db()
     conn = sqlite3.connect('bbs.db')
     c = conn.cursor()
-    # bucket_name = ""
-    # print('fadsf')
-    bucket = ''
-    c.execute("INSERT INTO user ( Username , Email , Password, Bucketname) \
-                   VALUES (?, ?, ?, ? )" , ('bobbb', 'email', '123', 'this is testing' ))
-    cursor = c.execute("SELECT Bucketname FROM user WHERE Username = (?) AND Password = (?)", ('bobbb', '123',))
-    for row in cursor:
-        # print(row)
-        bucket = row[0]
-    print(bucket)
+    # print(pt.get_bucket_and_oid(1))
  
