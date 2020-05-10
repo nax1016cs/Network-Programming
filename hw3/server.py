@@ -8,6 +8,7 @@ import sqlite3
 import sys
 import re
 import datetime
+import time
 
 user = user_db()
 board = board_db()
@@ -69,6 +70,7 @@ class thread_server(threading.Thread):
                         self.user = data[1]
                         self.bucket = bucket
                         self.socket.send(message.encode())
+                        time.sleep(0.5)
                         self.socket.send(bucket.encode())
 
 
@@ -132,6 +134,8 @@ class thread_server(threading.Thread):
                     message = "Create post successfully.\n\r"
                     self.socket.send(message.encode())
                     # need to fix 
+                    time.sleep(0.5)
+
                     self.socket.send(object_name.encode())
 
 
@@ -158,6 +162,7 @@ class thread_server(threading.Thread):
                     # print(objectid)
                     datas = objectid + ' ' + author_bucket
                     self.socket.send(meta_data.encode())
+                    time.sleep(0.5)
                     self.socket.send(datas.encode())
                     # self.socket.send(objectid.encode())
 
@@ -179,14 +184,16 @@ class thread_server(threading.Thread):
 
                 else:
                     t_comment = re.search('\d (.*)', data_in.decode()).group(1)
-                    cmt = self.user + ": "
-                    cmt += t_comment.replace('<br>', '\n') + '\n\r'
+                    cmt = self.user + ": " + t_comment + '\n\r'
+                    # cmt += t_comment.replace('<br>', '\n') + '\n\r'
                     oid, bucket_name = post.get_bucket_and_oid(data[1])
                     datas = oid + " " + bucket_name
                     # comment.insert(self.user, data[1], oid, bucket_name)
                     message = "Comment successfully.\n\r" 
                     self.socket.send(message.encode())
+                    time.sleep(0.5)
                     self.socket.send(datas.encode())
+                    time.sleep(0.5)
                     self.socket.send(cmt.encode())
 
 

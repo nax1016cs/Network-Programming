@@ -83,9 +83,12 @@ while True:
         target_bucket = s3.Bucket(author_bucket)
         target_object = target_bucket.Object(object_name)
         object_content = target_object.get()['Body'].read().decode()
-        new_content = object_content + comment
-        print('new comment: ', new_content)
+        # new_content = object_content + comment
+        # print('new comment: ', new_content)
         dest_dir = './tmp/' + object_name
+        with open(os.path.join('C:\\Users\\Chiang Chieh Ming\\Desktop\\Network-Programming\\hw3\\tmp',object_name), "a+") as file:
+                file.write(comment)
+                # file.close()
         target_bucket.upload_file(dest_dir, object_name)
 
     elif data.strip() == 'Delete successfully.':
@@ -96,16 +99,7 @@ while True:
         target_bucket = s3.Bucket(author_bucket)
         target_object = target_bucket.Object(object_name)
         target_object.delete()
-
+        path = 'C:\\Users\\Chiang Chieh Ming\\Desktop\\Network-Programming\\hw3\\tmp\\' + object_name
+        os.remove(path)
 
     print(data, end = '')
-
-
-
-
-
-    # for i in range(int(data[-1:])):
-    #     tmp = client.recv(4096).decode()
-    #     print(tmp, end = '')
-
-

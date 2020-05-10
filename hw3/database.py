@@ -31,6 +31,7 @@ class user_db():
             message = "Register successfully.\n\r"
             socket.send(message.encode())
             # need to fix 
+            time.sleep(0.5)
             socket.send(B_name.encode())
 
 
@@ -104,7 +105,6 @@ class board_db():
     def list_board(self, key, socket):
         conn = sqlite3.connect('bbs.db')
         c = conn.cursor()
-        cnt = 0
 
         if(len(key) != 0):
             
@@ -168,7 +168,7 @@ class post_db():
         try:
             object_name = Title +  str(int(time.time())) + '.txt'
             new_content = '--\n\r' + Content + '\n\r--\n\r'
-            with open(os.path.join('C:\\Users\\Chiang Chieh Ming\\Desktop\\Network-Programming\\hw3\\tmp',object_name), "w") as file:
+            with open(os.path.join('C:\\Users\\Chiang Chieh Ming\\Desktop\\Network-Programming\\hw3\\tmp',object_name), "a+") as file:
                 file.write(new_content)
                 file.close()
             c.execute("INSERT INTO post ( Board_name , Author, Date, Title, Object_id, Userbucket ) \
@@ -337,7 +337,6 @@ class post_db():
 if __name__ == "__main__":
     bd = board_db()
     pt = post_db()
-    ct = comment_db()
     user = user_db()
     conn = sqlite3.connect('bbs.db')
     c = conn.cursor()
