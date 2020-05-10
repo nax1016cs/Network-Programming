@@ -1,3 +1,4 @@
+# coding=utf-8
 import sqlite3
 import sys
 
@@ -11,7 +12,8 @@ class user_db():
                       ( UID INTEGER PRIMARY KEY AUTOINCREMENT,
                         Username TEXT NOT NULL UNIQUE,
                         Email TEXT NOT NULL,
-                        Password TEXT NOT NULL );''')
+                        Password TEXT NOT NULL,
+                        Bucketname NOT NULL );''')
         except sqlite3.OperationalError:
             pass
         conn.commit()
@@ -21,23 +23,29 @@ class user_db():
         conn = sqlite3.connect('bbs.db')
         c = conn.cursor()
         try:
-            c.execute("INSERT INTO user ( Username , Email , Password) \
-                   VALUES (?, ?, ? )" , (name, email, password ))
+            B_name = '0516097bucket' + name 
+            c.execute("INSERT INTO user ( Username , Email , Password, Bucketname) \
+                   VALUES (?, ?, ?, ? )" , (name, email, password, B_name ))
             socket.send("Register successfully.\n\r".encode())
+            ### send the bucket name to client
+            socket.send(B_name.encode())
+
 
         except sqlite3.IntegrityError:
             socket.send("Username is already used.\n\r".encode())
         conn.commit()
         conn.close()
 
-    def select(self, name, password, socket):
+    def login(self, name, password, socket):
         conn = sqlite3.connect('bbs.db')
         c = conn.cursor()
-        cursor = c.execute("SELECT COUNT(*) FROM user WHERE Username = (?) AND Password = (?)", (name, password,))
+        bucket_name = ""
+        cursor = c.execute("SELECT Bucketname FROM user WHERE Username = (?) AND Password = (?)", (name, password,))
         for row in cursor:
-            conn.commit()
-            conn.close()
-            return row[0]
+            bucket_name = row[0]
+        conn.commit()
+        conn.close()
+        return bucket_name
         
     def delete(self):
         conn = sqlite3.connect('bbs.db')
@@ -287,7 +295,17 @@ if __name__ == "__main__":
     bd = board_db()
     pt = post_db()
     ct = comment_db()
-
-
-
-    # bd.insert('b1', 'jj')
+    user = user_db()
+    conn = sqlite3.connect('bbs.db')
+    c = conn.cursor()
+    # bucket_name = ""
+    # print('fadsf')
+    bucket = ''
+    c.execute("INSERT INTO user ( Username , Email , Password, Bucketname) \
+                   VALUES (?, ?, ?, ? )" , ('bobbb', 'email', '123', 'this is testing' ))
+    cursor = c.execute("SELECT Bucketname FROM user WHERE Username = (?) AND Password = (?)", ('bobbb', '123',))
+    for row in cursor:
+        # print(row)
+        bucket = row[0]
+    print(bucket)
+ 

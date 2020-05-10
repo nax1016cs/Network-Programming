@@ -1,3 +1,4 @@
+# coding=utf-8
 import socket
 import threading
 from database import user_db
@@ -22,28 +23,29 @@ class thread_server(threading.Thread):
         self.socket = socket
         self.addr = addr
         self.user = ""
+        self.bucket = ""
 
     def run(self):
 
         conn = sqlite3.connect('bbs.db')
         c = conn.cursor()
-        self.socket.send("********************************\n\r".encode())
-        self.socket.send("** Welcome to the BBS server. **\n\r".encode())
-        self.socket.send("********************************\n\r".encode())
+        self.socket.send("********************************\n\r** Welcome to the BBS server. **\n\r********************************\n\r".encode())
 
         while True:
-            self.socket.send("% ".encode())
+            # self.socket.send("% ".encode())
             data_in = self.socket.recv(2048)
-            
+            # print(data_in)
             if not data_in:
                 continue
-            elif data_in.decode() == 'exit\r\n':
+
+            elif data_in.decode() == 'exit':
+                self.socket.send('exit'.encode())
                 break
 
-            # print(data_in.decode())
+
             data = data_in.decode().split()
 
-
+        
             if data[0] == "register":
             	if len(data) != 4:
             		self.socket.send("Usage: register <username> <email> <password>\n\r".encode())
@@ -54,16 +56,19 @@ class thread_server(threading.Thread):
 
                 if len(data) != 3:
                     self.socket.send("login <username> <password>\n\r".encode())
+
                 elif len(self.user) == 0:
-
-                    count = user.select(data[1], data[2], self.socket)
-                    if count == 0:
+                    bucket = user.login(data[1], data[2], self.socket)
+                    if len(bucket) == 0:
                         self.socket.send("Login failed.\n\r".encode())
-
-                    elif count == 1:
+                    else :
                         welcome_str = "Welcome, " + data[1] + ".\n\r"
-                        self.socket.send(welcome_str.encode())
                         self.user = data[1]
+                        self.bucket = bucket
+                        self.socket.send(welcome_str.encode())
+                        self.socket.send(bucket.encode())
+
+
                 else:
                     self.socket.send("Please logout first.\n\r".encode())
 
@@ -75,6 +80,7 @@ class thread_server(threading.Thread):
                     bye_str = "Bye, " + self.user + ".\n\r"
                     self.socket.send(bye_str.encode())
                     self.user = ""
+                    self.bucket = ""
 
             elif data[0] == "whoami" and len(data) == 1 :
 
@@ -182,7 +188,8 @@ class thread_server(threading.Thread):
                     self.socket.send("Update successfully.\n\r".encode())
                     
             else:
-                pass
+                self.socket.send(' '.encode())
+
 
         self.socket.close()
         conn.commit()
@@ -197,8 +204,11 @@ if __name__ == "__main__":
         port = int(sys.argv[1])
 
     server = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-    host = socket.gethostname()
-    server.bind((host,port)) 
+    # host = socket.gethostname()
+    # print(host)
+    # server.bind((host,port))
+    server.bind(('localhost',port)) 
+
     server.listen(10) 
     while True:
         (conn,addr) = server.accept() 
