@@ -4,6 +4,7 @@ import sys
 import time
 import os
 
+path = '/home/ubuntu/Desktop/Network-Programming/hw3/tmp/'
 
 class user_db():
     def __init__(self):
@@ -109,7 +110,7 @@ class board_db():
         for row in cursor:
             message += '{:<8}{:<16}{}\n\r'.format(  i, row[1] ,  row[2])
             i += 1
-
+        time.sleep(0.5)
         socket.send(message.encode())
         conn.commit()
         conn.close()
@@ -158,7 +159,7 @@ class post_db():
         try:
             object_name = "0516097-object" +  str(int(time.time())) + '.txt'
             new_content = '--\n\r' + Content + '\n\r--\n\r'
-            with open(os.path.join('C:\\Users\\Chiang Chieh Ming\\Desktop\\Network-Programming\\hw3\\tmp',object_name), "a+") as file:
+            with open(os.path.join(path,object_name), "a+") as file:
                 file.write(new_content)
                 file.close()
             c.execute("INSERT INTO post ( Board_name , Author, Date, Title, Object_id, Userbucket ) \

@@ -114,8 +114,16 @@ class thread_server(threading.Thread):
                 if len(data) == 2 :
                     if data[1][0] == '#' and data[1][1] == '#':
                         board.list_board(data[1][2:], self.socket)
-                else:
+                    else:
+                        message = "list-board ##<key>\n\r" 
+                        self.socket.send(message.encode())
+
+                elif len(data) ==1:
                     board.list_board('', self.socket)
+                
+                else:
+                    message = "list-board ##<key>\n\r" 
+                    self.socket.send(message.encode())
 
             elif data[0] == "create-post" :
                 if len(self.user) == 0 :
@@ -194,7 +202,7 @@ class thread_server(threading.Thread):
 
                 else:
                     t_comment = re.search('\d (.*)', data_in.decode()).group(1).rstrip()
-                    cmt = self.user + ": " + t_comment + '\n\r'
+                    cmt = self.user + ": " + t_comment 
                     oid, bucket_name = post.get_bucket_and_oid(data[1])
                     datas = oid + " " + bucket_name
                     message = "Comment successfully.\n\r" 
@@ -260,10 +268,8 @@ class thread_server(threading.Thread):
                         oid, bucket_name = post.get_bucket_and_oid(data[1])
                         datas = oid + " " + bucket_name
                         self.socket.send(datas.encode())
-                        print('data: ', datas)
                         time.sleep(0.5)
-                        self.socket.send(new_content.encode())
-                        print('content: ', new_content)
+                        self.socket.send(content.encode())
 
 
 

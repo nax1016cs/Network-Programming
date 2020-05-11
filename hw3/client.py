@@ -4,7 +4,8 @@ import sys
 import boto3
 import os
 import re
-path = 'C:\\Users\\Chiang Chieh Ming\\Desktop\\Network-Programming\\hw3\\tmp\\'
+import time
+path = '/home/ubuntu/Desktop/Network-Programming/hw3/tmp/'
 client = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 port = 9090
 if len(sys.argv) == 2 :
@@ -55,6 +56,7 @@ if  __name__ == "__main__":
 
     while True:
         #prompt
+        time.sleep(0.5)
         print('% ', end = '')
         input_str = input()
         if input_str.strip() == '':
@@ -111,7 +113,7 @@ if  __name__ == "__main__":
             object_content = target_object.get()['Body'].read().decode()
 
             #recieve comment
-            comment = client.recv(4096).decode()
+            comment = client.recv(4096).decode().strip() + '\n'
             dest_dir = './tmp/' + object_name
             with open(os.path.join(path,object_name), "a+") as file:
                     file.write(comment)
