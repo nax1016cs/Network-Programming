@@ -312,7 +312,7 @@ class thread_server(threading.Thread):
 
                 else:
                     metadata, object_name, receiver_bucket = mail.get_mail_data(data[1], self.user ,self.socket)
-                    print('metadata', metadata, len(metadata))
+                    # print('metadata', metadata, len(metadata))
                     if len(metadata) == 0:
                         message = 'No such mail.\n\r'
                         self.socket.send(message.encode())
@@ -340,7 +340,7 @@ class thread_server(threading.Thread):
                         self.socket.send(message.encode())
                     else:
                         object_name, receiver_bucket =  mail.delete_mail(self.user, data[1])
-                        message = "Mail deleted."
+                        message = "Mail deleted.\n\r"
                         self.socket.send(message.encode())
                         time.sleep(0.2)
                         datas = object_name + ' ' + receiver_bucket

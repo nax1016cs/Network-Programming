@@ -302,7 +302,7 @@ class mail_db():
         c = conn.cursor()
         object_name = "0516097-mail" +  str(int(time.time())) + '.txt'
         with open(os.path.join(path,object_name), "w+") as file:
-            file.write(Content)
+            file.write(Content + '\n\r')
             file.close()
         c.execute("INSERT INTO mail ( Receiver , Sender, Date, Subject, Object_id, Userbucket ) \
                 VALUES (?, ?, ?, ?, ?, ?)" , (Receiver, Sender, Date ,Subject, object_name, Userbucket,))
@@ -318,7 +318,7 @@ class mail_db():
         message = 'ID\tSubject\tFrom\tDate\n\r'
         idx = 1
         for row in cursor:
-            print(row)
+            # print(row)
             new_date = row[3][row[3].find('-') + 1:].replace('-','/')
             message += '{:<8}{:<8}{:<8}{}\n\r' .format(  str(idx) ,  row[4] ,row[1], new_date)
             idx += 1
@@ -338,10 +338,10 @@ class mail_db():
         author_bucket = ""
         idx = 1
         for row in cursor:
-            print(row)
+            # print(row)
             if int(id_) == int(idx):
                 message += 'Subject\t:{}\nFrom\t:{}\nDate\t:{}\n\r' .format(row[4], row[1], row[3]) + '--\r\n'
-                print(message)
+                # print(message)
                 # print(row)
                 object_name = row[5]
                 # postid = int(row[0])
@@ -361,7 +361,7 @@ class mail_db():
         cursor =  c.execute("SELECT * from mail WHERE Receiver = ?" ,(receiver,) )
         idx = 1
         for row in cursor:
-            print(row)
+            # print(row)
             if int(id_) == int(idx):
                 table_id = int(row[0])
                 c.execute("DELETE from mail WHERE MID = ?" ,(table_id,) )
