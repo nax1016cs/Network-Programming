@@ -53,7 +53,16 @@ class user_db():
         conn.close()
         return bucket_name
     
-
+    def get_bucket(self, name):
+        conn = sqlite3.connect('bbs.db')
+        c = conn.cursor()
+        bucket_name = ""
+        cursor = c.execute("SELECT Bucketname FROM user WHERE Username = (?)", (name,))
+        for row in cursor:
+            bucket_name = row[0]
+        conn.commit()
+        conn.close()
+        return bucket_name
 
     def delete(self):
         conn = sqlite3.connect('bbs.db')
@@ -159,7 +168,7 @@ class post_db():
         try:
             object_name = "0516097-object" +  str(int(time.time())) + '.txt'
             new_content = '--\n\r' + Content + '\n\r--\n\r'
-            with open(os.path.join(path,object_name), "a+") as file:
+            with open(os.path.join(path,object_name), "w+") as file:
                 file.write(new_content)
                 file.close()
             c.execute("INSERT INTO post ( Board_name , Author, Date, Title, Object_id, Userbucket ) \
@@ -223,7 +232,7 @@ class post_db():
             object_name = row[5]
             # postid = int(row[0])
             author_bucket = row[6]
-            print(row)
+            # print(row)
 
         conn.commit()
         conn.close()
@@ -246,7 +255,7 @@ class post_db():
         c = conn.cursor()
         cursor = c.execute("SELECT Object_id, Userbucket FROM post  WHERE PID = ?" ,(id,))
         for row in cursor:
-            print(row)
+            # print(row)
             conn.commit()
             conn.close()
             return row[0], row[1]
@@ -265,6 +274,86 @@ class post_db():
         c.execute("UPDATE post SET Title = (?) WHERE PID = (?)" , ( data, id,) )
         conn.commit()
         conn.close()
+
+
+class mail_db():
+
+    def __init__(self):
+        conn = sqlite3.connect('bbs.db')
+        c = conn.cursor()
+        try:
+            c.execute('''CREATE TABLE mail
+                      ( PID INTEGER PRIMARY KEY AUTOINCREMENT,
+                        Sender TEXT NOT NULL,          
+                        Receiver TEXT NOT NULL,                        
+                        Date TEXT NOT NULL,
+                        Subject TEXT NOT NULL, 
+                        Object_id  TEXT NOT NULL,
+                        Userbucket TEXT NOT NULL
+                        );''')
+        except sqlite3.OperationalError:
+            pass
+        conn.commit()
+        conn.close()
+
+    ## reciever, sender, date, subject, content, bucket
+    def insert(self, Receiver, Sender, Date, Subject, Content, Userbucket ):
+        conn = sqlite3.connect('bbs.db')
+        c = conn.cursor()
+        object_name = "0516097-mail" +  str(int(time.time())) + '.txt'
+        new_content = '--\n\r' + Content 
+        with open(os.path.join(path,object_name), "w+") as file:
+            file.write(new_content)
+            file.close()
+        c.execute("INSERT INTO mail ( Receiver , Sender, Date, Subject, Object_id, Userbucket ) \
+                VALUES (?, ?, ?, ?, ?, ?)" , (Receiver, Sender, Date ,Subject, object_name, Userbucket,))
+
+        conn.commit()
+        conn.close()
+        return object_name
+
+    def list_mail(self, receiver, socket):
+        conn = sqlite3.connect('bbs.db')
+        c = conn.cursor()
+        cursor = c.execute("SELECT * FROM mail where Receiver = (?)  " ,(receiver,))
+        message = 'ID\tSubject\tFrom\tDate\n\r'
+        idx = 1
+        for row in cursor:
+            print(row)
+            new_date = row[2][row[2].find('-') + 1:].replace('-','/')
+            message += '{:<8}{:<8}{:<8}{}\n\r' .format(  str(idx) ,  row[4] ,row[1], new_date)
+            idx += 1
+
+        socket.send(message.encode())
+        conn.commit()
+        conn.close()
+
+    def get_mail_data(self, id_, receiver, socket):
+        conn = sqlite3.connect('bbs.db')
+        c = conn.cursor()
+        cursor = c.execute("SELECT * FROM mail where Receiver = (?)  " ,(receiver,))
+
+
+        message = ""
+        object_name = ""
+        author_bucket = ""
+        idx = 1
+        for row in cursor:
+            print(row)
+            if id_ == idx:
+                message += 'Subject\t:{}\From\t:{}\nDate\t:{}\n\r' .format(row[4], row[1], row[3]) + '--\r\n'
+                # print(row)
+                object_name = row[6]
+                # postid = int(row[0])
+                author_bucket = row[7]
+                break
+            idx += 1
+            # print(row)
+
+        conn.commit()
+        conn.close()
+        # get the content
+        return message, object_name, author_bucket
 
 
 if __name__ == "__main__":

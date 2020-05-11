@@ -4,6 +4,7 @@ import threading
 from database import user_db
 from database import board_db
 from database import post_db
+from database import mail_db
 import sqlite3
 import sys
 import re
@@ -13,6 +14,7 @@ import time
 user = user_db()
 board = board_db()
 post = post_db()
+mail = mail_db()
 
 
 
@@ -182,14 +184,7 @@ class thread_server(threading.Thread):
                     self.socket.send(meta_data.encode())
                     time.sleep(0.2)
                     self.socket.send(datas.encode())
-                    # self.socket.send(objectid.encode())
-
-
-
-
-                    ####
-                    # if comment.check_comment(data[1]):
-                    #     comment.list_comment(data[1], self.socket)
+ 
 
             elif data[0] == "comment":
                 if len(self.user) == 0 :
@@ -261,7 +256,7 @@ class thread_server(threading.Thread):
 
                     if new_title != None:
                         post.update_post_title(data[1], new_title.rstrip())
-                        print(new_title)
+                        # print(new_title)
                         self.socket.send(' '.encode())
                     else:
                         content = new_content.replace('<br>', '\n').rstrip()
@@ -271,8 +266,83 @@ class thread_server(threading.Thread):
                         time.sleep(0.2)
                         self.socket.send(content.encode())
 
+            elif data[0] == 'mail-to':
+                receiver_bucket = user.get_bucket(data[1])
+                if len(self.user) == 0 :
+                    message = "Please login first.\n\r" 
+                    self.socket.send(message.encode())
 
+                elif  len(receiver_bucket) == 0 :
+                    message = "<username> does not exist.\n\r" 
+                    self.socket.send(message.encode())
+                
+                else:
+                    subject = re.search('--subject (.*) --content', data_in.decode()).group(1)
+                    t_content = re.search('--content (.*)', data_in.decode()).group(1)
+                    content = t_content.replace('<br>', '\n')
 
+                    # print('title: ', title, 'content: ', content)
+                    now = datetime.datetime.now()
+                    date = str(now.year) + '-' + str(now.month) + '-' + str(now.day)
+                    ## receiver, sender, date, subject, content, receiver_bucket
+                    object_name = mail.insert(data[1], self.user, date, subject, content, receiver_bucket)
+                    #  fix 
+                    message = "Sent successfully.\n\r"
+                    self.socket.send(message.encode())
+                    # need to fix 
+                    time.sleep(0.2)
+                    datas = object_name + ' ' + receiver_bucket
+                    self.socket.send(datas.encode())
+            elif data[0] == 'list-mail':
+                if len(self.user) == 0 :
+                    message = "Please login first.\n\r" 
+                    self.socket.send(message.encode())
+
+                else:
+                    mail.list_mail(self.user, self.socket)
+            elif data[0] == 'retr-mail':
+                if len(self.user) == 0 :
+                    message = "Please login first.\n\r" 
+                    self.socket.send(message.encode())
+
+                elif len(data) != 2:
+                    message = "retr-mail <mail#>\n\r" 
+                    self.socket.send(message.encode())
+
+                else:
+                    metadata, object_name, receiver_bucket = mail.get_mail_data(data[1], self.user ,self.socket)
+                    print('metadata', metadata, len(metadata))
+                    if len(metadata) == 0:
+                        message = 'No such mail.\n\r'
+                        self.socket.send(message.encode())
+                    else:
+                        message = "Read-mail"
+                        self.socket.send(message.encode())
+                        time.sleep(0.2)
+                        self.socket.send(metadata.encode())
+                        time.sleep(0.2)
+                        datas = object_name + ' ' + receiver_bucket
+                        self.socket.send(datas.encode())
+
+            elif data[0] == 'delete-mail':
+                if len(self.user) == 0 :
+                    message = "Please login first.\n\r" 
+                    self.socket.send(message.encode())
+
+                elif len(data) != 2:
+                    message = "delete-mail <mail#>\n\r" 
+                    self.socket.send(message.encode())
+                else:
+                    metadata, object_name, receiver_bucket = mail.get_mail_data(data[1], self.user, self.socket)
+                    if metadata == "":
+                        messgae = 'No such mail.\n\r'
+                        self.socket.send(message.encode())
+                    else:
+                        message = "Mail deleted."
+                        self.socket.send(message.encode())
+                        time.sleep(0.2)
+                        datas = object_name + ' ' + receiver_bucket
+                        self.socket.send(datas.encode())
             else:
                 self.socket.send(' '.encode())
 

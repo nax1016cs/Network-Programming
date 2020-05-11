@@ -144,4 +144,28 @@ if  __name__ == "__main__":
                     # file.close()
                 target_bucket.upload_file(dest_dir, object_name)
 
+        elif data.strip() == 'Sent successfully.':
+
+            maildata = client.recv(4096).decode()
+            target_object, object_name, target_bucket = get_bucket_obj(client, maildata)
+            dest_dir = './tmp/' + object_name
+            target_bucket.upload_file(dest_dir, object_name)
+        
+        elif data.strip() == 'Read-mail':
+            meta_data = client.recv(4096).decode()
+            print(meta_data, end = "")
+            maildata = client.recv(4096).decode()
+            
+            target_object, object_name, target_bucket = get_bucket_obj(client,maildata)
+            object_content = target_object.get()['Body'].read().decode()
+            print(object_content, end = "")
+
+        elif data.strip() == 'Mail deleted.':
+            postdata = client.recv(4096).decode()
+            target_object, object_name, target_bucket = get_bucket_obj(client, postdata)
+            target_object.delete()
+            path = path + object_name
+            os.remove(path)
+
+
         print(data, end = '')
