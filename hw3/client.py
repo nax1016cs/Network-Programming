@@ -72,14 +72,14 @@ if  __name__ == "__main__":
         elif data.strip() == 'Register successfully.':
             # create the bucket
             bucket = client.recv(4096).decode()
-            print(bucket)
+            # print(bucket)
             s3.create_bucket(Bucket = bucket)
 
 
         elif data[:8] == 'Welcome,':
             bucket = client.recv(4096).decode()
             current_bucket = bucket
-            print("current bucket is :",current_bucket)
+            # print("current bucket is :",current_bucket)
 
 
         elif data[:5] == 'Bye,':

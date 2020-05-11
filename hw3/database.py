@@ -26,7 +26,7 @@ class user_db():
         conn = sqlite3.connect('bbs.db')
         c = conn.cursor()
         try:
-            B_name = '0516097bucket' + name 
+            B_name = '0516097-bucket' + str(int(time.time())) 
             c.execute("INSERT INTO user ( Username , Email , Password, Bucketname) \
                    VALUES (?, ?, ?, ? )" , (name, email, password, B_name ))
             message = "Register successfully.\n\r"
@@ -167,7 +167,7 @@ class post_db():
         c = conn.cursor()
         try:
             object_name = "0516097-object" +  str(int(time.time())) + '.txt'
-            new_content = '--\n\r' + Content + '\n\r--\n\r'
+            new_content = '--\n\r' + Content + '\n\r--'
             with open(os.path.join(path,object_name), "w+") as file:
                 file.write(new_content)
                 file.close()
@@ -346,7 +346,7 @@ class mail_db():
                 object_name = row[5]
                 # postid = int(row[0])
                 author_bucket = row[6]
-                break
+                # break
             idx += 1
             # print(row)
 
@@ -354,12 +354,14 @@ class mail_db():
         conn.close()
         # get the content
         return message, object_name, author_bucket
+        # print('should not happen')
 
     def delete_mail(self, receiver, id_):
         conn = sqlite3.connect('bbs.db')
         c = conn.cursor()
         cursor =  c.execute("SELECT * from mail WHERE Receiver = ?" ,(receiver,) )
         idx = 1
+
         for row in cursor:
             # print(row)
             if int(id_) == int(idx):

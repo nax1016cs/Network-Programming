@@ -58,8 +58,8 @@ class thread_server(threading.Thread):
             elif data[0] == "login":
 
                 if len(data) != 3:
-                    messgae = "login <username> <password>\n\r"
-                    self.socket.send(messgae.encode())
+                    message = "login <username> <password>\n\r"
+                    self.socket.send(message.encode())
 
                 elif len(self.user) == 0:
                     bucket = user.login(data[1], data[2], self.socket)
@@ -273,7 +273,7 @@ class thread_server(threading.Thread):
                     self.socket.send(message.encode())
 
                 elif  len(receiver_bucket) == 0 :
-                    message = "<username> does not exist.\n\r" 
+                    message = data[1] + " does not exist.\n\r" 
                     self.socket.send(message.encode())
                 
                 else:
@@ -335,8 +335,8 @@ class thread_server(threading.Thread):
                     self.socket.send(message.encode())
                 else:
                     metadata, object_name, receiver_bucket = mail.get_mail_data(data[1], self.user, self.socket)
-                    if metadata == "":
-                        messgae = 'No such mail.\n\r'
+                    if len(metadata) == 0 :
+                        message = 'No such mail.\n\r'
                         self.socket.send(message.encode())
                     else:
                         object_name, receiver_bucket =  mail.delete_mail(self.user, data[1])
