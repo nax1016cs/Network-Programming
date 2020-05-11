@@ -102,6 +102,11 @@ class thread_server(threading.Thread):
                 if len(self.user) == 0 :
                     message = "Please login first.\n\r" 
                     self.socket.send(message.encode())
+
+                elif len(data) != 2:
+                    message = "create-board <name>\n\r" 
+                    self.socket.send(message.encode())
+                
                 else:
                     board.insert(data[1], self.user, self.socket)
 
@@ -156,6 +161,11 @@ class thread_server(threading.Thread):
                 if not post.check_post(data[1]):
                     message = "Post does not exist.\n\r" 
                     self.socket.send(message.encode())
+
+                elif len(data) != 2:
+                    message = "read <post-id>\n\r" 
+                    self.socket.send(message.encode())
+
                 else:
                     self.socket.send('Read_post'.encode())
                     meta_data, objectid, author_bucket = post.read_post(data[1], self.socket)
@@ -199,6 +209,10 @@ class thread_server(threading.Thread):
             elif data[0] == "delete-post":
                 if len(self.user) == 0 :
                     message = "Please login first.\n\r" 
+                    self.socket.send(message.encode())
+                    
+                elif len(data) != 2:
+                    message = "delete-post <post-id>\n\r" 
                     self.socket.send(message.encode())
 
                 elif not post.check_post(data[1]):
