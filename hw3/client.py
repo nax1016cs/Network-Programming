@@ -167,5 +167,5 @@ if  __name__ == "__main__":
             del_path = path + object_name
             os.remove(del_path)
 
-    # if data.strip() != ' ' or data.strip() != 'Read-mail' or data.strip() != 'Read_post':
-    print(data, end = '')
+        if data.strip() != ' ' or data.strip() != 'Read-mail' or data.strip() != 'Read_post':
+            print(data, end = '')
