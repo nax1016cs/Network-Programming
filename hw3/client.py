@@ -124,8 +124,8 @@ if  __name__ == "__main__":
             postdata = client.recv(4096).decode()
             target_object, object_name, target_bucket = get_bucket_obj(client, postdata)
             target_object.delete()
-            path = path + object_name
-            os.remove(path)
+            del_path = path + object_name
+            os.remove(del_path)
 
         elif data.strip() == 'Update successfully.':
             message = client.recv(4096).decode()
@@ -164,8 +164,8 @@ if  __name__ == "__main__":
             postdata = client.recv(4096).decode()
             target_object, object_name, target_bucket = get_bucket_obj(client, postdata)
             target_object.delete()
-            path = path + object_name
-            os.remove(path)
+            del_path = path + object_name
+            os.remove(del_path)
 
-
-        print(data, end = '')
+    # if data.strip() != ' ' or data.strip() != 'Read-mail' or data.strip() != 'Read_post':
+    print(data, end = '')

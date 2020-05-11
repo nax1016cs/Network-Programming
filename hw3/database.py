@@ -283,7 +283,7 @@ class mail_db():
         c = conn.cursor()
         try:
             c.execute('''CREATE TABLE mail
-                      ( PID INTEGER PRIMARY KEY AUTOINCREMENT,
+                      ( MID INTEGER PRIMARY KEY AUTOINCREMENT,
                         Sender TEXT NOT NULL,          
                         Receiver TEXT NOT NULL,                        
                         Date TEXT NOT NULL,
@@ -301,9 +301,8 @@ class mail_db():
         conn = sqlite3.connect('bbs.db')
         c = conn.cursor()
         object_name = "0516097-mail" +  str(int(time.time())) + '.txt'
-        new_content = '--\n\r' + Content 
         with open(os.path.join(path,object_name), "w+") as file:
-            file.write(new_content)
+            file.write(Content)
             file.close()
         c.execute("INSERT INTO mail ( Receiver , Sender, Date, Subject, Object_id, Userbucket ) \
                 VALUES (?, ?, ?, ?, ?, ?)" , (Receiver, Sender, Date ,Subject, object_name, Userbucket,))
@@ -320,7 +319,7 @@ class mail_db():
         idx = 1
         for row in cursor:
             print(row)
-            new_date = row[2][row[2].find('-') + 1:].replace('-','/')
+            new_date = row[3][row[3].find('-') + 1:].replace('-','/')
             message += '{:<8}{:<8}{:<8}{}\n\r' .format(  str(idx) ,  row[4] ,row[1], new_date)
             idx += 1
 
@@ -340,12 +339,13 @@ class mail_db():
         idx = 1
         for row in cursor:
             print(row)
-            if id_ == idx:
-                message += 'Subject\t:{}\From\t:{}\nDate\t:{}\n\r' .format(row[4], row[1], row[3]) + '--\r\n'
+            if int(id_) == int(idx):
+                message += 'Subject\t:{}\nFrom\t:{}\nDate\t:{}\n\r' .format(row[4], row[1], row[3]) + '--\r\n'
+                print(message)
                 # print(row)
-                object_name = row[6]
+                object_name = row[5]
                 # postid = int(row[0])
-                author_bucket = row[7]
+                author_bucket = row[6]
                 break
             idx += 1
             # print(row)
@@ -354,6 +354,25 @@ class mail_db():
         conn.close()
         # get the content
         return message, object_name, author_bucket
+
+    def delete_mail(self, receiver, id_):
+        conn = sqlite3.connect('bbs.db')
+        c = conn.cursor()
+        cursor =  c.execute("SELECT * from mail WHERE Receiver = ?" ,(receiver,) )
+        idx = 1
+        for row in cursor:
+            print(row)
+            if int(id_) == int(idx):
+                table_id = int(row[0])
+                c.execute("DELETE from mail WHERE MID = ?" ,(table_id,) )
+                object_name = row[5]
+                author_bucket = row[6]
+                break
+            idx += 1
+            # print(row)
+        conn.commit()
+        conn.close()
+        return  object_name, author_bucket
 
 
 if __name__ == "__main__":

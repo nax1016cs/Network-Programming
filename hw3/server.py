@@ -300,6 +300,7 @@ class thread_server(threading.Thread):
 
                 else:
                     mail.list_mail(self.user, self.socket)
+                    
             elif data[0] == 'retr-mail':
                 if len(self.user) == 0 :
                     message = "Please login first.\n\r" 
@@ -338,6 +339,7 @@ class thread_server(threading.Thread):
                         messgae = 'No such mail.\n\r'
                         self.socket.send(message.encode())
                     else:
+                        object_name, receiver_bucket =  mail.delete_mail(self.user, data[1])
                         message = "Mail deleted."
                         self.socket.send(message.encode())
                         time.sleep(0.2)
