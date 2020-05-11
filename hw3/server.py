@@ -34,9 +34,7 @@ class thread_server(threading.Thread):
         self.socket.send("********************************\n\r** Welcome to the BBS server. **\n\r********************************\n\r".encode())
 
         while True:
-            # self.socket.send("% ".encode())
             data_in = self.socket.recv(2048)
-            # print(data_in)
             if not data_in:
                 continue
 
@@ -141,7 +139,6 @@ class thread_server(threading.Thread):
                     t_content = re.search('--content (.*)', data_in.decode()).group(1)
                     content = t_content.replace('<br>', '\n')
 
-                    # print('title: ', title, 'content: ', content)
                     now = datetime.datetime.now()
                     date = str(now.year) + '-' + str(now.month) + '-' + str(now.day)
                     object_name = post.insert(data[1], self.user, date, title, content, bucket)
@@ -163,7 +160,6 @@ class thread_server(threading.Thread):
                     if len(data) == 3 :
                         if data[2][0] =='#' and data[2][1] =='#':
                             post.list_post(data[1], data[2][2:], self.socket)
-                        # print(data[2].strip('#'))
 
                     elif len(data) == 2 :
                         post.list_post(data[1], "" , self.socket)
@@ -179,7 +175,6 @@ class thread_server(threading.Thread):
                 else:
                     self.socket.send('Read_post'.encode())
                     meta_data, objectid, author_bucket = post.read_post(data[1], self.socket)
-                    # print(objectid)
                     datas = objectid + ' ' + author_bucket
                     self.socket.send(meta_data.encode())
                     time.sleep(0.2)
@@ -256,7 +251,6 @@ class thread_server(threading.Thread):
 
                     if new_title != None:
                         post.update_post_title(data[1], new_title.rstrip())
-                        # print(new_title)
                         self.socket.send(' '.encode())
                     else:
                         content = new_content.replace('<br>', '\n').rstrip()
@@ -281,7 +275,6 @@ class thread_server(threading.Thread):
                     t_content = re.search('--content (.*)', data_in.decode()).group(1)
                     content = t_content.replace('<br>', '\n')
 
-                    # print('title: ', title, 'content: ', content)
                     now = datetime.datetime.now()
                     date = str(now.year) + '-' + str(now.month) + '-' + str(now.day)
                     ## receiver, sender, date, subject, content, receiver_bucket
@@ -312,7 +305,6 @@ class thread_server(threading.Thread):
 
                 else:
                     metadata, object_name, receiver_bucket = mail.get_mail_data(data[1], self.user ,self.socket)
-                    # print('metadata', metadata, len(metadata))
                     if len(metadata) == 0:
                         message = 'No such mail.\n\r'
                         self.socket.send(message.encode())

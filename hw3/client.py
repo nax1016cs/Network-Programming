@@ -21,12 +21,8 @@ s3 = boto3.resource('s3')
 
 
 def get_bucket_obj(client, postdata):
-    # print(postdata)
     author_bucket = postdata.split()[1]
     object_name = postdata.split()[0]
-    # print('author_bucket', author_bucket)
-    # print('object-name', object_name)
-
     target_bucket = s3.Bucket(author_bucket)
     target_object = target_bucket.Object(object_name)
     return target_object, object_name, target_bucket
@@ -36,15 +32,10 @@ def get_comment(obj_name):
     dest_dir = path + obj_name
     f = open(dest_dir, 'r')
     lines = f.readlines()
-    # print(lines)
     content = "".join(lines)
-    # print(content)
     last_char_index = [ m.end(0) for m in re.finditer('--', content)]
-    # print(last_char_index)
     comment = content[last_char_index[-1]:]
-    # print(comment)
     f.close()
-    # pass
     return comment
 
 
@@ -52,8 +43,6 @@ def get_comment(obj_name):
 
 
 if  __name__ == "__main__":
-    # print(get_comment('C:\\Users\\Chiang Chieh Ming\\Desktop\\Network-Programming\\hw3\\tmp\\test1589171440.txt'))
-
     while True:
         #prompt
         time.sleep(0.5)
@@ -72,14 +61,12 @@ if  __name__ == "__main__":
         elif data.strip() == 'Register successfully.':
             # create the bucket
             bucket = client.recv(4096).decode()
-            # print(bucket)
             s3.create_bucket(Bucket = bucket)
 
 
         elif data[:8] == 'Welcome,':
             bucket = client.recv(4096).decode()
             current_bucket = bucket
-            # print("current bucket is :",current_bucket)
 
 
         elif data[:5] == 'Bye,':
@@ -104,7 +91,6 @@ if  __name__ == "__main__":
             target_object, object_name, target_bucket = get_bucket_obj(client,postdata)
             object_content = target_object.get()['Body'].read().decode()
             print(object_content, end = "")
-            # print('--\n\r')
         
         elif data.strip() == 'Comment successfully.':
 

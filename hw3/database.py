@@ -127,14 +127,12 @@ class board_db():
     def check_board(self, name):
         conn = sqlite3.connect('bbs.db')
         c = conn.cursor()
-        # print('name:' , name , 'len:', len(name))
         try:
             cursor = c.execute("PRAGMA case_sensitive_like = true")
             cursor = c.execute("SELECT COUNT(*) FROM board WHERE Board_name = ? " ,(name,))
             for row in cursor:
                 conn.commit()
                 conn.close()
-                # print(row)
                 return row[0]
         except:
             conn.commit()
@@ -192,8 +190,6 @@ class post_db():
             cursor = c.execute("SELECT * FROM post  where Board_name = (?)  " ,(bname,))
         message = 'ID\tTitle\t\tAuthor\t\tDate\n\r'
         for row in cursor:
-            # print(row)
-
             ###### id board title name date content
             new_date = row[2][row[2].find('-') + 1:].replace('-','/')
             message += '{:<8}{:<16}{:<16}{}\n\r' .format(  row[0],  row[3] ,row[1], new_date)
@@ -205,7 +201,6 @@ class post_db():
     def check_post(self, id):
         conn = sqlite3.connect('bbs.db')
         c = conn.cursor()
-        # print('name:' , name , 'len:', len(name))
         try:
             cursor = c.execute("SELECT COUNT(*) FROM post WHERE PID = ? " ,(id,))
             for row in cursor:
@@ -228,11 +223,8 @@ class post_db():
         author_bucket = ""
         for row in cursor:
             message += 'Author\t:{}\nTitle\t:{}\nDate\t:{}\n\r' .format(row[1], row[3], row[2])
-            # print(row)
             object_name = row[5]
-            # postid = int(row[0])
             author_bucket = row[6]
-            # print(row)
 
         conn.commit()
         conn.close()
@@ -244,10 +236,8 @@ class post_db():
         c = conn.cursor()
         cursor = c.execute("SELECT Author FROM post  WHERE PID = ?" ,(id,))
         for row in cursor:
-            # print(row)
             conn.commit()
             conn.close()
-            # print(row)
             return row[0]
 
     def get_bucket_and_oid(self, id):
@@ -318,7 +308,6 @@ class mail_db():
         message = 'ID\tSubject\tFrom\tDate\n\r'
         idx = 1
         for row in cursor:
-            # print(row)
             new_date = row[3][row[3].find('-') + 1:].replace('-','/')
             message += '{:<8}{:<8}{:<8}{}\n\r' .format(  str(idx) ,  row[4] ,row[1], new_date)
             idx += 1
@@ -338,23 +327,16 @@ class mail_db():
         author_bucket = ""
         idx = 1
         for row in cursor:
-            # print(row)
             if int(id_) == int(idx):
                 message += 'Subject\t:{}\nFrom\t:{}\nDate\t:{}\n\r' .format(row[4], row[1], row[3]) + '--\r\n'
-                # print(message)
-                # print(row)
                 object_name = row[5]
-                # postid = int(row[0])
                 author_bucket = row[6]
-                # break
             idx += 1
-            # print(row)
 
         conn.commit()
         conn.close()
         # get the content
         return message, object_name, author_bucket
-        # print('should not happen')
 
     def delete_mail(self, receiver, id_):
         conn = sqlite3.connect('bbs.db')
@@ -363,7 +345,6 @@ class mail_db():
         idx = 1
 
         for row in cursor:
-            # print(row)
             if int(id_) == int(idx):
                 table_id = int(row[0])
                 c.execute("DELETE from mail WHERE MID = ?" ,(table_id,) )
@@ -371,7 +352,6 @@ class mail_db():
                 author_bucket = row[6]
                 break
             idx += 1
-            # print(row)
         conn.commit()
         conn.close()
         return  object_name, author_bucket
@@ -383,5 +363,4 @@ if __name__ == "__main__":
     user = user_db()
     conn = sqlite3.connect('bbs.db')
     c = conn.cursor()
-    # print(pt.get_bucket_and_oid(1))
  
