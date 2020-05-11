@@ -183,12 +183,10 @@ class thread_server(threading.Thread):
                     self.socket.send(message.encode())
 
                 else:
-                    t_comment = re.search('\d (.*)', data_in.decode()).group(1)
+                    t_comment = re.search('\d (.*)', data_in.decode()).group(1).rstrip()
                     cmt = self.user + ": " + t_comment + '\n\r'
-                    # cmt += t_comment.replace('<br>', '\n') + '\n\r'
                     oid, bucket_name = post.get_bucket_and_oid(data[1])
                     datas = oid + " " + bucket_name
-                    # comment.insert(self.user, data[1], oid, bucket_name)
                     message = "Comment successfully.\n\r" 
                     self.socket.send(message.encode())
                     time.sleep(0.5)
@@ -236,11 +234,25 @@ class thread_server(threading.Thread):
                 else:
                     new_title = re.search('--title (.*)|--content (.*)', data_in.decode()).group(1)
                     new_content = re.search('--title (.*)|--content (.*)', data_in.decode()).group(2)
-                    new_data = new_title if new_title != None else new_content
-                    post.update_post(data[1], data[2].strip('-'), new_data.rstrip())
                     message = "Update successfully.\n\r" 
                     self.socket.send(message.encode())
-                    
+
+                    if new_title != None:
+                        post.update_post_title(data[1], new_title.rstrip())
+                        print(new_title)
+                        self.socket.send(' '.encode())
+                    else:
+                        content = new_content.replace('<br>', '\n').rstrip()
+                        oid, bucket_name = post.get_bucket_and_oid(data[1])
+                        datas = oid + " " + bucket_name
+                        self.socket.send(datas.encode())
+                        print('data: ', datas)
+                        time.sleep(0.5)
+                        self.socket.send(new_content.encode())
+                        print('content: ', new_content)
+
+
+
             else:
                 self.socket.send(' '.encode())
 
