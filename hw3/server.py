@@ -70,7 +70,7 @@ class thread_server(threading.Thread):
                         self.user = data[1]
                         self.bucket = bucket
                         self.socket.send(message.encode())
-                        time.sleep(0.5)
+                        time.sleep(0.2)
                         self.socket.send(bucket.encode())
 
 
@@ -147,7 +147,7 @@ class thread_server(threading.Thread):
                     message = "Create post successfully.\n\r"
                     self.socket.send(message.encode())
                     # need to fix 
-                    time.sleep(0.5)
+                    time.sleep(0.2)
 
                     self.socket.send(object_name.encode())
 
@@ -180,7 +180,7 @@ class thread_server(threading.Thread):
                     # print(objectid)
                     datas = objectid + ' ' + author_bucket
                     self.socket.send(meta_data.encode())
-                    time.sleep(0.5)
+                    time.sleep(0.2)
                     self.socket.send(datas.encode())
                     # self.socket.send(objectid.encode())
 
@@ -207,9 +207,9 @@ class thread_server(threading.Thread):
                     datas = oid + " " + bucket_name
                     message = "Comment successfully.\n\r" 
                     self.socket.send(message.encode())
-                    time.sleep(0.5)
+                    time.sleep(0.2)
                     self.socket.send(datas.encode())
-                    time.sleep(0.5)
+                    time.sleep(0.2)
                     self.socket.send(cmt.encode())
 
 
@@ -268,7 +268,7 @@ class thread_server(threading.Thread):
                         oid, bucket_name = post.get_bucket_and_oid(data[1])
                         datas = oid + " " + bucket_name
                         self.socket.send(datas.encode())
-                        time.sleep(0.5)
+                        time.sleep(0.2)
                         self.socket.send(content.encode())
 
 
