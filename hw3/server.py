@@ -70,7 +70,8 @@ class thread_server(threading.Thread):
                         self.user = data[1]
                         self.bucket = bucket
                         self.socket.send(message.encode())
-                        time.sleep(0.2)
+                        t = self.socket.recv(4096).decode()
+                        # time.sleep(0.2)
                         self.socket.send(bucket.encode())
 
 
@@ -140,14 +141,14 @@ class thread_server(threading.Thread):
                     content = t_content.replace('<br>', '\n')
 
                     now = datetime.datetime.now()
-                    date = str(now.year) + '-' + str(now.month) + '-' + str(now.day)
+                    date = str(now.year) + '-' + str(now.month).zfill(2) + '-' + str(now.day)
                     object_name = post.insert(data[1], self.user, date, title, content, bucket)
-                    #  fix 
                     message = "Create post successfully.\n\r"
                     self.socket.send(message.encode())
                     # need to fix 
-                    time.sleep(0.2)
-
+                    # time.sleep(0.2)
+                    t = self.socket.recv(4096).decode()
+                    
                     self.socket.send(object_name.encode())
 
 
@@ -176,8 +177,10 @@ class thread_server(threading.Thread):
                     self.socket.send('Read_post'.encode())
                     meta_data, objectid, author_bucket = post.read_post(data[1], self.socket)
                     datas = objectid + ' ' + author_bucket
+                    t = self.socket.recv(4096).decode()
                     self.socket.send(meta_data.encode())
-                    time.sleep(0.2)
+                    t = self.socket.recv(4096).decode()
+                    # time.sleep(0.2)
                     self.socket.send(datas.encode())
  
 
@@ -197,9 +200,11 @@ class thread_server(threading.Thread):
                     datas = oid + " " + bucket_name
                     message = "Comment successfully.\n\r" 
                     self.socket.send(message.encode())
-                    time.sleep(0.2)
+                    # time.sleep(0.2)
+                    t = self.socket.recv(4096).decode()
                     self.socket.send(datas.encode())
-                    time.sleep(0.2)
+                    t = self.socket.recv(4096).decode()
+                    # time.sleep(0.2)
                     self.socket.send(cmt.encode())
 
 
@@ -227,6 +232,7 @@ class thread_server(threading.Thread):
                     datas = oid + " " + bucket_name
                     message = "Delete successfully.\n\r" 
                     self.socket.send(message.encode())
+                    t = self.socket.recv(4096).decode()
                     self.socket.send(datas.encode())
 
 
@@ -248,7 +254,7 @@ class thread_server(threading.Thread):
                     new_content = re.search('--title (.*)|--content (.*)', data_in.decode()).group(2)
                     message = "Update successfully.\n\r" 
                     self.socket.send(message.encode())
-
+                    t = self.socket.recv(4096).decode()
                     if new_title != None:
                         post.update_post_title(data[1], new_title.rstrip())
                         self.socket.send(' '.encode())
@@ -257,7 +263,8 @@ class thread_server(threading.Thread):
                         oid, bucket_name = post.get_bucket_and_oid(data[1])
                         datas = oid + " " + bucket_name
                         self.socket.send(datas.encode())
-                        time.sleep(0.2)
+                        # time.sleep(0.2)
+                        t = self.socket.recv(4096).decode()
                         self.socket.send(content.encode())
 
             elif data[0] == 'mail-to':
@@ -276,14 +283,15 @@ class thread_server(threading.Thread):
                     content = t_content.replace('<br>', '\n')
 
                     now = datetime.datetime.now()
-                    date = str(now.year) + '-' + str(now.month) + '-' + str(now.day)
+                    date = str(now.year) + '-' + str(now.month).zfill(2) + '-' + str(now.day)
                     ## receiver, sender, date, subject, content, receiver_bucket
                     object_name = mail.insert(data[1], self.user, date, subject, content, receiver_bucket)
                     #  fix 
                     message = "Sent successfully.\n\r"
                     self.socket.send(message.encode())
                     # need to fix 
-                    time.sleep(0.2)
+                    # time.sleep(0.2)
+                    t = self.socket.recv(4096).decode()
                     datas = object_name + ' ' + receiver_bucket
                     self.socket.send(datas.encode())
             elif data[0] == 'list-mail':
@@ -311,9 +319,11 @@ class thread_server(threading.Thread):
                     else:
                         message = "Read-mail"
                         self.socket.send(message.encode())
-                        time.sleep(0.2)
+                        # time.sleep(0.2)
+                        t = self.socket.recv(4096).decode()
                         self.socket.send(metadata.encode())
-                        time.sleep(0.2)
+                        # time.sleep(0.2)
+                        t = self.socket.recv(4096).decode()
                         datas = object_name + ' ' + receiver_bucket
                         self.socket.send(datas.encode())
 
@@ -334,7 +344,8 @@ class thread_server(threading.Thread):
                         object_name, receiver_bucket =  mail.delete_mail(self.user, data[1])
                         message = "Mail deleted.\n\r"
                         self.socket.send(message.encode())
-                        time.sleep(0.2)
+                        # time.sleep(0.2)
+                        t = self.socket.recv(4096).decode()
                         datas = object_name + ' ' + receiver_bucket
                         self.socket.send(datas.encode())
             else:
@@ -357,7 +368,7 @@ if __name__ == "__main__":
     # host = socket.gethostname()
     # print(host)
     # server.bind((host,port))
-    server.bind(('localhost',port)) 
+    server.bind(('127.0.0.1',port)) 
 
     server.listen(10) 
     while True:

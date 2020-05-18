@@ -4,7 +4,7 @@ import sys
 import time
 import os
 
-path = '/home/ubuntu/Desktop/Network-Programming/hw3/tmp/'
+path = '/home/ubuntu/Desktop/nctu_nphw3_demo/tmp/'
 
 class user_db():
     def __init__(self):
@@ -32,7 +32,9 @@ class user_db():
             message = "Register successfully.\n\r"
             socket.send(message.encode())
             # need to fix 
-            time.sleep(0.5)
+            # time.sleep(0.5)
+            t = socket.recv(4096).decode()
+
             socket.send(B_name.encode())
 
 
@@ -114,12 +116,12 @@ class board_db():
         else:
             cursor = c.execute("SELECT * FROM board ")
 
-        message = 'Index\tName\t\tModerator\n\r'
+        message = '\tIndex\tName\tModerator\n\r'
         i = 1
         for row in cursor:
-            message += '{:<8}{:<16}{}\n\r'.format(  i, row[1] ,  row[2])
+            message += '\t{}\t{}\t{}\n\r'.format(  i , row[1] ,  row[2])
             i += 1
-        time.sleep(0.5)
+        # time.sleep(0.5)
         socket.send(message.encode())
         conn.commit()
         conn.close()
@@ -165,7 +167,7 @@ class post_db():
         c = conn.cursor()
         try:
             object_name = "0516097-object" +  str(int(time.time())) + '.txt'
-            new_content = '--\n\r' + Content + '\n\r--'
+            new_content = '--\n\r' + Content + '\n\r--\n\r'
             with open(os.path.join(path,object_name), "w+") as file:
                 file.write(new_content)
                 file.close()
@@ -188,11 +190,11 @@ class post_db():
             cursor = c.execute("SELECT * FROM post  where Board_name = (?) and Title like ? " ,(bname,temp_key,))
         else:
             cursor = c.execute("SELECT * FROM post  where Board_name = (?)  " ,(bname,))
-        message = 'ID\tTitle\t\tAuthor\t\tDate\n\r'
+        message = '\tID\tTitle\tAuthor\tDate\n\r'
         for row in cursor:
             ###### id board title name date content
             new_date = row[2][row[2].find('-') + 1:].replace('-','/')
-            message += '{:<8}{:<16}{:<16}{}\n\r' .format(  row[0],  row[3] ,row[1], new_date)
+            message += '\t{}\t{}\t{}\t{}\n\r' .format(  row[0],  row[3] ,row[1], new_date)
 
         socket.send(message.encode())
         conn.commit()
@@ -222,7 +224,7 @@ class post_db():
         object_name = ""
         author_bucket = ""
         for row in cursor:
-            message += 'Author\t:{}\nTitle\t:{}\nDate\t:{}\n\r' .format(row[1], row[3], row[2])
+            message += '\tAuthor\t:{}\n\tTitle\t:{}\n\tDate\t:{}\n\r' .format(row[1], row[3], row[2])
             object_name = row[5]
             author_bucket = row[6]
 
@@ -305,11 +307,11 @@ class mail_db():
         conn = sqlite3.connect('bbs.db')
         c = conn.cursor()
         cursor = c.execute("SELECT * FROM mail where Receiver = (?)  " ,(receiver,))
-        message = 'ID\tSubject\tFrom\tDate\n\r'
+        message = '\tID\tSubject\tFrom\tDate\n\r'
         idx = 1
         for row in cursor:
             new_date = row[3][row[3].find('-') + 1:].replace('-','/')
-            message += '{:<8}{:<8}{:<8}{}\n\r' .format(  str(idx) ,  row[4] ,row[1], new_date)
+            message += '\t{}\t{}\t{}\t{}\n\r' .format(  str(idx) ,  row[4] ,row[1], new_date)
             idx += 1
 
         socket.send(message.encode())
@@ -328,7 +330,7 @@ class mail_db():
         idx = 1
         for row in cursor:
             if int(id_) == int(idx):
-                message += 'Subject\t:{}\nFrom\t:{}\nDate\t:{}\n\r' .format(row[4], row[1], row[3]) + '--\r\n'
+                message += '\tSubject\t:{}\n\tFrom\t:{}\n\tDate\t:{}\n\r' .format(row[4], row[1], row[3]) + '--\r\n'
                 object_name = row[5]
                 author_bucket = row[6]
             idx += 1
