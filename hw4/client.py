@@ -12,36 +12,46 @@ from kafka import TopicPartition
 sub_board = {}
 sub_author = {}
 
-close_thread = False
+topic = ['tim']
+is_running = True
 
 class thread_sub(threading.Thread):
 
-    def __init__(self, sub_type, topic, keyword ):
+    def __init__(self):
         threading.Thread.__init__(self)
-        self.sub_type = sub_type
-        self.topic = topic
-        self.keyword = keyword
         self.time_ = str(int(time.time()))[-6:]
         self.consumer = KafkaConsumer(group_id= self.time_, bootstrap_servers= ['localhost:9092'], api_version = (0, 9))
         
 
     def run(self):
-        while not close_thread:
-            self.consumer.assign([TopicPartition(topic= self.topic, partition= 0)])
+        global topic, is_running
+        print('thread running')
+        while is_running == True :
+            time.sleep(2)
+            print("11111")
+            # print(is_running)
+            print(topic)
+            self.consumer.subscribe(topics = topic)
+            self.consumer.subscribe(topics = topic)
             for msg in self.consumer:
                 print(msg)
-                print('topic: ', self.topic)
-                print('keyword: ', self.keyword)
+                # if self.running == False:
+                #     break
+                # print(msg)
+                # print('topic: ', self.topic)
+                # print('keyword: ', self.keyword)
 
-                if self.sub_type == 'board':
-                    for word in sub_board[self.topic]:
-                        if self.keyword in word:
-                            print(msg.key.decode(), msg.value.decode())
+                # if self.sub_type == 'board':
+                #     for word in sub_board[self.topic]:
+                #         if self.keyword in word:
+                #             print(msg.key.decode(), msg.value.decode())
 
-                elif self.sub_type == 'author':
-                    for word in sub_author[self.topic]:
-                        if self.keyword in word:
-                            print(msg.key.decode(), msg.value.decode())
+                # elif self.sub_type == 'author':
+                #     for word in sub_author[self.topic]:
+                #         if self.keyword in word:
+                #             print(msg.key.decode(), msg.value.decode())
+            
+        print('thread terminated')
         return
 
 
@@ -82,6 +92,8 @@ if  __name__ == "__main__":
     current_bucket = ''
 
     s3 = boto3.resource('s3')
+    begin_thread = True
+    thread_sub().start() 
     while True:
         #prompt
         # time.sleep(0.5)
@@ -91,22 +103,30 @@ if  __name__ == "__main__":
         input_split = input_str.split()
         if input_str.strip() == '':
             continue
+        if input_str == 'exit':
+            is_running = False
 
         client.send(input_str.encode())
         data = client.recv(4096).decode()
 
-        
+        if data.strip() == 'exit':
+            client.close() 
+            print('main close')
+            print(is_running)
+            # time.sleep(3)
+            # thread_sub.exit()
+            break
 
-        if input_split[0] == 'subscribe':
+        elif input_split[0] == 'subscribe':
             if len(input_split) != 5:
                 print("usage: subscribe --board <board-name> --keyword <keyword>")
                 continue
 
-            if len(current_bucket) == 0:
+            elif len(current_bucket) == 0:
                 print("Please login first.")
                 continue
 
-            if input_split[1] == '--board' and input_split[3] == '--keyword':
+            elif input_split[1] == '--board' and input_split[3] == '--keyword':
                 board_name = re.search('--board (.*) --keyword (.*)', input_str).group(1)
                 key_word = re.search('--board (.*) --keyword (.*)', input_str).group(2)
                 if board_name in sub_board:
@@ -119,7 +139,13 @@ if  __name__ == "__main__":
                 else:
                     sub_board[board_name] = []
                     sub_board[board_name].append(key_word) 
-                thread_sub('board', board_name, key_word).start()  
+
+                topic.append(board_name)
+                # if begin_thread:
+                #     thread_sub().start()  
+                #     begin_thread = False
+
+
 
             elif input_split[1] == '--author' and input_split[3] == '--keyword':
                 author = re.search('--author (.*) --keyword (.*)', input_str).group(1)
@@ -134,15 +160,21 @@ if  __name__ == "__main__":
                 else:
                     sub_author[author] = []
                     sub_author[author].append(key_word) 
-                thread_sub('author', author, key_word).start()  
-        
+                topic.append(author)
+                # if begin_thread:
+                #     thread_sub().start()  
+                #     begin_thread = False
+                    
+
+
             else:
                 print("usage: subscribe --board <board-name> --keyword <keyword>")  
                 continue  
             print(sub_author)
             print(sub_board)
+            print('topic', topic)
 
-        if input_split[0] == 'list-sub':
+        elif input_split[0] == 'list-sub':
             if len(sub_author) > 0: 
                 print('*' * 15, 'Author', '*' * 15 )
                 for name in sub_author:
@@ -162,11 +194,7 @@ if  __name__ == "__main__":
                 print('*' * 15,'Board', '*' * 15 )
 
 
-        if data.strip() == 'exit':
-            client.close() 
-            close_thread = True
-            time.sleep(3)
-            break
+        
 
         elif data.strip() == 'Register successfully.':
             # create the bucket
