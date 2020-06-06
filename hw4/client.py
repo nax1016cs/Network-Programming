@@ -32,6 +32,8 @@ class thread_sub(threading.Thread):
         self.consumer.subscribe(topics = topic)
         while is_running:
             msg = self.consumer.poll(timeout_ms=5)
+            if is_running == False:
+                break
             if len(msg) != 0:
                 print (msg)
                 for keys, values in msg.items():
@@ -83,8 +85,17 @@ def get_comment(obj_name):
     f.close()
     return comment
 
+def sub_author_exist(author, key_word):
+    for record_ky in sub_author[author]:
+        if record_ky == key_word:
+            return True
+    return False
 
-
+def sub_board_exist(board_name, key_word):
+    for record_ky in sub_board[board_name]:
+        if record_ky == key_word:
+            return True
+    return False
 
 
 if  __name__ == "__main__":
@@ -103,16 +114,11 @@ if  __name__ == "__main__":
     s3 = boto3.resource('s3')
     begin_thread = True
     while True:
-
-        find = False
         print('% ', end = '')
         input_str = input()
         input_split = input_str.split()
         if input_str.strip() == '':
             continue
-        # if input_str == 'exit':
-
-        #     is_running = False
 
         client.send(input_str.encode())
         data = client.recv(4096).decode()
@@ -120,9 +126,10 @@ if  __name__ == "__main__":
         if data.strip() == 'exit':
             client.close() 
             is_running = False
+            thread.join()
             print('main close')
             print(is_running)
-            thread.join()
+            
             
             # time.sleep(3)
             # thread_sub.exit()
@@ -142,12 +149,12 @@ if  __name__ == "__main__":
             elif input_split[1] == '--board' and input_split[3] == '--keyword':
                 board_name = re.search('--board (.*) --keyword (.*)', input_str).group(1)
                 key_word = re.search('--board (.*) --keyword (.*)', input_str).group(2)
+                
                 if board_name in sub_board:
-                    for record_ky in sub_board[board_name]:
-                        if record_ky == key_word:
-                            print('Already subscribed.')
-                            find = True
-                    if not find:
+                    check = sub_board_exist(board_name, key_word)
+                    if check:
+                        print('Already subscribed.')
+                    else:                    
                         sub_board[board_name].append(key_word)
                 else:
                     sub_board[board_name] = []
@@ -155,6 +162,7 @@ if  __name__ == "__main__":
 
                 
                 if begin_thread:
+                    is_running = True
                     topic.append(board_name)
                     thread = thread_sub()
                     thread.start() 
@@ -171,16 +179,17 @@ if  __name__ == "__main__":
                 author = re.search('--author (.*) --keyword (.*)', input_str).group(1)
                 key_word = re.search('--author (.*) --keyword (.*)', input_str).group(2)
                 if author in sub_author:
-                    for record_ky in sub_author[author]:
-                        if record_ky == key_word:
-                            print('Already subscribed.')
-                            find = True
-                    if not find:
+                    check = sub_author_exist(author, key_word)
+                    if check:
+                        print('Already subscribed.')
+                    else:
                         sub_author[author].append(key_word)
                 else:
                     sub_author[author] = []
                     sub_author[author].append(key_word) 
+
                 if begin_thread:
+                    is_running = True
                     topic.append(author)
                     thread = thread_sub()
                     thread.start()  
@@ -198,6 +207,51 @@ if  __name__ == "__main__":
             print(sub_author)
             print(sub_board)
             print('topic', topic)
+        
+        elif input_split[0] == 'unsubscribe':
+            if len(input_split) != 3:
+                print("usage: unsubscribe --board <board-name>")
+                continue
+
+            elif len(current_bucket) == 0:
+                print("Please login first.")
+                continue
+            
+            elif input_split[1] == '--board':
+                board_name = re.search('--board (.*)', input_str).group(1)
+                if board_name in sub_board:
+                    topic.remove(board_name)
+                    thread.consumer.unsubscribe()
+                    del sub_board[board_name]
+                    if len(topic) == 0:
+                        is_running = False
+                        thread.join()
+                        begin_thread = True
+                    else:
+                        thread.consumer.subscribe(topics = topic)
+                    
+                    print('Unsubscribe successfully.')
+
+                else:
+                    print("You haven't subscribed ", board_name)
+            
+            elif input_split[1] == '--author':
+                author = re.search('--author (.*)', input_str).group(1)
+                if author in sub_author:
+                    topic.remove(author)
+                    del sub_author[author]
+                    thread.consumer.unsubscribe()
+                    if len(topic) == 0:
+                        is_running = False
+                        thread.join()
+                        begin_thread = True
+                    else:
+                        thread.consumer.subscribe(topics = topic)
+                    print('Unsubscribe successfully.')
+
+                else:
+                    print("You haven't subscribed ", author)
+                
 
         elif input_split[0] == 'list-sub':
             if len(current_bucket) == 0:
