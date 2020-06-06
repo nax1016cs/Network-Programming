@@ -35,14 +35,11 @@ class thread_sub(threading.Thread):
             if is_running == False:
                 break
             if len(msg) != 0:
-                print (msg)
+                # print (msg)
                 for keys, values in msg.items():
                     inform_topic = keys.topic   # topic
                     type_ = values[0].key.decode()
                     value = values[0].value.decode()
-                    print('topic: ', inform_topic)
-                    print('key ', type_)
-                    print('value ', value)
 
                 title = value.split('!@#$%')[1] # title
 
@@ -52,7 +49,6 @@ class thread_sub(threading.Thread):
                     for word in sub_author[inform_topic]:
                         if word in title:
                             print("Board: ", board, "Title: ", title, "Author: ", inform_topic)
-                            print('% ', end = '')
                 
                 elif type_ == 'board':
                     name = value.split('!@#$%')[0] # author
@@ -60,7 +56,6 @@ class thread_sub(threading.Thread):
                     for word in sub_board[inform_topic]:
                         if word in title:
                             print("Board: ", inform_topic, "Title: ", title, "Author: ", name)
-                            print('% ', end = '')
             
         print('thread terminated')
         return
@@ -128,11 +123,6 @@ if  __name__ == "__main__":
             is_running = False
             thread.join()
             print('main close')
-            print(is_running)
-            
-            
-            # time.sleep(3)
-            # thread_sub.exit()
             break
 
 
@@ -154,11 +144,13 @@ if  __name__ == "__main__":
                     check = sub_board_exist(board_name, key_word)
                     if check:
                         print('Already subscribed.')
-                    else:                    
+                    else:   
+                        print('Subscribe successfully.')          
                         sub_board[board_name].append(key_word)
                 else:
                     sub_board[board_name] = []
                     sub_board[board_name].append(key_word) 
+                    print('Subscribe successfully.') 
 
                 
                 if begin_thread:
@@ -167,11 +159,10 @@ if  __name__ == "__main__":
                     thread = thread_sub()
                     thread.start() 
                     begin_thread = False
-                    print('begin_thread')
+                    # print('begin_thread')
                 else:
                     topic.append(board_name)
                     thread.consumer.subscribe(topics = topic)
-                    print('NEWLY SUB:',thread.consumer.subscription() )
 
 
 
@@ -184,9 +175,11 @@ if  __name__ == "__main__":
                         print('Already subscribed.')
                     else:
                         sub_author[author].append(key_word)
+                        print('Subscribe successfully.') 
                 else:
                     sub_author[author] = []
                     sub_author[author].append(key_word) 
+                    print('Subscribe successfully.') 
 
                 if begin_thread:
                     is_running = True
@@ -194,7 +187,7 @@ if  __name__ == "__main__":
                     thread = thread_sub()
                     thread.start()  
                     begin_thread = False
-                    print('begin_thread')
+                    # print('begin_thread')
                 else:
                     topic.append(author)
                     thread.consumer.subscribe(topics = topic)
@@ -204,9 +197,6 @@ if  __name__ == "__main__":
             else:
                 print("usage: subscribe --board <board-name> --keyword <keyword>")  
                 continue  
-            print(sub_author)
-            print(sub_board)
-            print('topic', topic)
         
         elif input_split[0] == 'unsubscribe':
             if len(input_split) != 3:
