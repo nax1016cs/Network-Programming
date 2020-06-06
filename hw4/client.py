@@ -12,7 +12,7 @@ from kafka import TopicPartition
 sub_board = {}
 sub_author = {}
 
-topic = ['tim']
+topic = []
 is_running = True
 
 class thread_sub(threading.Thread):
@@ -20,36 +20,45 @@ class thread_sub(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
         self.time_ = str(int(time.time()))[-6:]
-        self.consumer = KafkaConsumer(group_id= self.time_, bootstrap_servers= ['localhost:9092'], api_version = (0, 9))
+        self.consumer = KafkaConsumer(group_id= self.time_, bootstrap_servers= ['localhost:9092'],
+                                      api_version = (0,9), metadata_max_age_ms = 500,
+                                      auto_offset_reset  = 'latest', enable_auto_commit = True,
+                                       auto_commit_interval_ms =1000, session_timeout_ms = 30000, )
         
 
     def run(self):
         global topic, is_running
         print('thread running')
-        while is_running == True :
-            time.sleep(2)
-            print("11111")
-            # print(is_running)
-            print(topic)
-            self.consumer.subscribe(topics = topic)
-            self.consumer.subscribe(topics = topic)
-            for msg in self.consumer:
-                print(msg)
-                # if self.running == False:
-                #     break
-                # print(msg)
-                # print('topic: ', self.topic)
-                # print('keyword: ', self.keyword)
+        self.consumer.subscribe(topics = topic)
+        while is_running:
+            msg = self.consumer.poll(timeout_ms=5)
+            if len(msg) != 0:
+                print (msg)
+                for keys, values in msg.items():
+                    inform_topic = keys.topic   # topic
+                    type_ = values[0].key.decode()
+                    value = values[0].value.decode()
+                    print('topic: ', inform_topic)
+                    print('key ', type_)
+                    print('value ', value)
 
-                # if self.sub_type == 'board':
-                #     for word in sub_board[self.topic]:
-                #         if self.keyword in word:
-                #             print(msg.key.decode(), msg.value.decode())
+                title = value.split('!@#$%')[1] # title
 
-                # elif self.sub_type == 'author':
-                #     for word in sub_author[self.topic]:
-                #         if self.keyword in word:
-                #             print(msg.key.decode(), msg.value.decode())
+                if type_ == 'author':
+                    board = value.split('!@#$%')[0] # board
+                    
+                    for word in sub_author[inform_topic]:
+                        if word in title:
+                            print("Board: ", board, "Title: ", title, "Author: ", inform_topic)
+                            print('% ', end = '')
+                
+                elif type_ == 'board':
+                    name = value.split('!@#$%')[0] # author
+                    
+                    for word in sub_board[inform_topic]:
+                        if word in title:
+                            print("Board: ", inform_topic, "Title: ", title, "Author: ", name)
+                            print('% ', end = '')
             
         print('thread terminated')
         return
@@ -93,29 +102,33 @@ if  __name__ == "__main__":
 
     s3 = boto3.resource('s3')
     begin_thread = True
-    thread_sub().start() 
     while True:
-        #prompt
-        # time.sleep(0.5)
+
         find = False
         print('% ', end = '')
         input_str = input()
         input_split = input_str.split()
         if input_str.strip() == '':
             continue
-        if input_str == 'exit':
-            is_running = False
+        # if input_str == 'exit':
+
+        #     is_running = False
 
         client.send(input_str.encode())
         data = client.recv(4096).decode()
 
         if data.strip() == 'exit':
             client.close() 
+            is_running = False
             print('main close')
             print(is_running)
+            thread.join()
+            
             # time.sleep(3)
             # thread_sub.exit()
             break
+
+
 
         elif input_split[0] == 'subscribe':
             if len(input_split) != 5:
@@ -140,10 +153,17 @@ if  __name__ == "__main__":
                     sub_board[board_name] = []
                     sub_board[board_name].append(key_word) 
 
-                topic.append(board_name)
-                # if begin_thread:
-                #     thread_sub().start()  
-                #     begin_thread = False
+                
+                if begin_thread:
+                    topic.append(board_name)
+                    thread = thread_sub()
+                    thread.start() 
+                    begin_thread = False
+                    print('begin_thread')
+                else:
+                    topic.append(board_name)
+                    thread.consumer.subscribe(topics = topic)
+                    print('NEWLY SUB:',thread.consumer.subscription() )
 
 
 
@@ -160,10 +180,15 @@ if  __name__ == "__main__":
                 else:
                     sub_author[author] = []
                     sub_author[author].append(key_word) 
-                topic.append(author)
-                # if begin_thread:
-                #     thread_sub().start()  
-                #     begin_thread = False
+                if begin_thread:
+                    topic.append(author)
+                    thread = thread_sub()
+                    thread.start()  
+                    begin_thread = False
+                    print('begin_thread')
+                else:
+                    topic.append(author)
+                    thread.consumer.subscribe(topics = topic)
                     
 
 
@@ -175,6 +200,9 @@ if  __name__ == "__main__":
             print('topic', topic)
 
         elif input_split[0] == 'list-sub':
+            if len(current_bucket) == 0:
+                print("Please login first.")
+
             if len(sub_author) > 0: 
                 print('*' * 15, 'Author', '*' * 15 )
                 for name in sub_author:
@@ -209,7 +237,7 @@ if  __name__ == "__main__":
             current_bucket = bucket
 
 
-        elif data[:5] == 'Bye,':
+        elif data[:5] == 'Bye, ':
             current_bucket = ''
 
 

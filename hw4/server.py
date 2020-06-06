@@ -152,10 +152,16 @@ class thread_server(threading.Thread):
                     
                     self.socket.send(object_name.encode())
                     try:
-                        future = producer.send(data[1], key= (title + '@board').encode(), value= self.user.encode(), partition= 0)
-                        result = future.get(timeout= 10)
-                        future = producer.send(self.user, key= (title + '@author').encode(), value= data[1].encode(), partition= 0)
-                        result = future.get(timeout= 10)
+                        future = producer.send(data[1], key= ('board').encode(), value= (self.user  + '!@#$%' + title).encode(), partition= 0)
+                        print('sending board: ', data[1])
+                        print(future)
+                        # result = future.get(timeout= 10)
+                        # print(result)
+                        future = producer.send(self.user, key= ('author').encode(), value= (data[1] + '!@#$%' + title).encode(), partition= 0)
+                        # result = future.get(timeout= 10)
+                        print('sending author: ', self.user)
+                        print(future)
+                        producer.flush()
 
                     except:
                         pass
@@ -377,7 +383,7 @@ if __name__ == "__main__":
     # host = socket.gethostname()
     # print(host)
     # server.bind((host,port))
-    producer = KafkaProducer(bootstrap_servers=['localhost:9092'], api_version = (0, 9))
+    producer = KafkaProducer(bootstrap_servers=['localhost:9092'], api_version = (0,9), metadata_max_age_ms  = 500)
     server.bind(('127.0.0.1',port)) 
 
     server.listen(10) 
