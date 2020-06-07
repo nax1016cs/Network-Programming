@@ -48,14 +48,16 @@ class thread_sub(threading.Thread):
                     
                     for word in sub_author[inform_topic]:
                         if word in title:
-                            print("Board: ", board, "Title: ", title, "Author: ", inform_topic)
+                            print('*[', board, '] ', title, ' - by', inform_topic, '*')
+                            # print("Board: ", board, "Title: ", title, "Author: ", inform_topic)
                 
                 elif type_ == 'board':
                     name = value.split('!@#$%')[0] # author
                     
                     for word in sub_board[inform_topic]:
                         if word in title:
-                            print("Board: ", inform_topic, "Title: ", title, "Author: ", name)
+                            print('*[', inform_topic, '] ', title, ' - by', name, '*')
+                            # print("Board: ", inform_topic, "Title: ", title, "Author: ", name)
             
         print('thread terminated')
         return
@@ -258,7 +260,6 @@ if  __name__ == "__main__":
                     for keyword in sub_author[name]:
                         print(keyword, ', ', end = '')
                     print()
-                print('*' * 15, 'Author', '*' * 15 )
 
             if len(sub_board) > 0:
                 print('*' * 15,'Board', '*' * 15 )
@@ -267,7 +268,6 @@ if  __name__ == "__main__":
                     for keyword in sub_board[name]:
                         print(keyword, ', ', end = '')
                     print()
-                print('*' * 15,'Board', '*' * 15 )
 
 
         
