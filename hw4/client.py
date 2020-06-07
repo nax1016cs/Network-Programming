@@ -13,7 +13,7 @@ sub_board = {}
 sub_author = {}
 
 topic = []
-is_running = True
+is_running = False
 
 class thread_sub(threading.Thread):
 
@@ -109,6 +109,10 @@ if  __name__ == "__main__":
     s3 = boto3.resource('s3')
     begin_thread = True
     while True:
+        # print('author: ' , sub_author)
+        # print('board: ' , sub_board)
+        # print('topic: ', topic)
+
         print('% ', end = '')
         input_str = input()
         input_split = input_str.split()
@@ -283,6 +287,12 @@ if  __name__ == "__main__":
 
         elif data[:5] == 'Bye, ':
             current_bucket = ''
+            sub_board = {}
+            sub_author = {}
+            is_running = False
+            begin_thread = True
+            thread.join()
+            topic = []
 
 
         
