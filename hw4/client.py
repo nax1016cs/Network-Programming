@@ -23,12 +23,12 @@ class thread_sub(threading.Thread):
         self.consumer = KafkaConsumer(group_id= self.time_, bootstrap_servers= ['localhost:9092'],
                                       api_version = (0,9), metadata_max_age_ms = 500,
                                       auto_offset_reset  = 'latest', enable_auto_commit = True,
-                                       auto_commit_interval_ms =1000, session_timeout_ms = 30000, )
+                                       auto_commit_interval_ms =1000, session_timeout_ms = 30000)
         
 
     def run(self):
         global topic, is_running
-        print('thread running')
+        # print('thread running')
         self.consumer.subscribe(topics = topic)
         while is_running:
             msg = self.consumer.poll(timeout_ms=5)
@@ -59,7 +59,7 @@ class thread_sub(threading.Thread):
                             print('*[', inform_topic, '] ', title, ' - by', name, '*')
                             # print("Board: ", inform_topic, "Title: ", title, "Author: ", name)
             
-        print('thread terminated')
+        # print('thread terminated')
         return
 
 
@@ -127,15 +127,18 @@ if  __name__ == "__main__":
         if data.strip() == 'exit':
             client.close() 
             is_running = False
-            thread.join()
-            print('main close')
+            try:
+                thread.join()
+                # print('main close')
+            except:
+                pass
             break
 
 
 
         elif input_split[0] == 'subscribe':
             if len(input_split) != 5:
-                print("usage: subscribe --board <board-name> --keyword <keyword>")
+                print("usage: subscribe --board/author <board-name>/<author-name> --keyword <keyword>")
                 continue
 
             elif len(current_bucket) == 0:
@@ -167,7 +170,8 @@ if  __name__ == "__main__":
                     begin_thread = False
                     # print('begin_thread')
                 else:
-                    topic.append(board_name)
+                    if board_name not in topic:
+                        topic.append(board_name)
                     thread.consumer.subscribe(topics = topic)
 
 
@@ -195,18 +199,19 @@ if  __name__ == "__main__":
                     begin_thread = False
                     # print('begin_thread')
                 else:
-                    topic.append(author)
+                    if author not in topic:
+                        topic.append(author)
                     thread.consumer.subscribe(topics = topic)
                     
 
 
             else:
-                print("usage: subscribe --board <board-name> --keyword <keyword>")  
+                print("usage: subscribe --board/author <board-name>/<author-name> --keyword <keyword>")  
                 continue  
         
         elif input_split[0] == 'unsubscribe':
-            if len(input_split) != 3:
-                print("usage: unsubscribe --board <board-name>")
+            if len(input_split) != 3 or not (input_split[1] == "--board" or input_split[1] == "--author"):
+                print("usage: unsubscribe --board/author <board-name>/<author-name>")
                 continue
 
             elif len(current_bucket) == 0:
@@ -247,6 +252,7 @@ if  __name__ == "__main__":
 
                 else:
                     print("You haven't subscribed ", author)
+
                 
 
         elif input_split[0] == 'list-sub':
