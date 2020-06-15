@@ -4,7 +4,7 @@ import sys
 import time
 import os
 
-path = '/home/ubuntu/Desktop/Network-Programming/hw4/tmp/'
+path = '/home/ubuntu/Desktop/Network-Programming/hw4/nctu_nphw4_demo/tmp/'
 
 class user_db():
     def __init__(self):

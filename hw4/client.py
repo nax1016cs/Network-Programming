@@ -14,6 +14,7 @@ sub_author = {}
 
 topic = []
 is_running = False
+path = '/home/ubuntu/Desktop/nctu_nphw3_demoNetwork-Programming/hw4/nctu_nphw4_demo/tmp/'
 
 class thread_sub(threading.Thread):
 
@@ -96,7 +97,6 @@ def sub_board_exist(board_name, key_word):
 
 
 if  __name__ == "__main__":
-    path = '/home/ubuntu/Desktop/nctu_nphw3_demoNetwork-Programming/hw4/tmp/'
     client = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
     port = 9090
     if len(sys.argv) == 2 :
@@ -137,8 +137,11 @@ if  __name__ == "__main__":
 
 
         elif input_split[0] == 'subscribe':
-            if len(input_split) != 5:
-                print("usage: subscribe --board/author <board-name>/<author-name> --keyword <keyword>")
+            if len(input_split) != 5 and input_split[1] == "--board":
+                print("usage: subscribe --board <board-name> --keyword <keyword>")
+                continue
+            elif len(input_split) != 5 and input_split[1] == "--author":
+                print("usage: subscribe --author <author-name> --keyword <keyword>")
                 continue
 
             elif len(current_bucket) == 0:
@@ -205,13 +208,20 @@ if  __name__ == "__main__":
                     
 
 
-            else:
-                print("usage: subscribe --board/author <board-name>/<author-name> --keyword <keyword>")  
+            elif input_split[1] == "--board":
+                print("usage: subscribe --board <board-name> --keyword <keyword>")  
+                continue
+
+            elif input_split[1] == "--author":
+                print("usage: subscribe --author <author-name> --keyword <keyword>")  
                 continue  
         
         elif input_split[0] == 'unsubscribe':
-            if len(input_split) != 3 or not (input_split[1] == "--board" or input_split[1] == "--author"):
-                print("usage: unsubscribe --board/author <board-name>/<author-name>")
+            if len(input_split) != 3 and (input_split[1] == "--board"):
+                print("usage: unsubscribe --board <board-name>")
+                continue
+            if len(input_split) != 3 and (input_split[1] == "--author"):
+                print("usage: unsubscribe --author <author-name>")
                 continue
 
             elif len(current_bucket) == 0:
